@@ -1,4 +1,6 @@
 # ringtone
 
 ## links
-- Audio framework - https://tonejs.github.io/
+- react - https://react.dev/learn
+- audio framework - https://tonejs.github.io/
+- websocket
