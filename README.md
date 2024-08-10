@@ -2,7 +2,6 @@
 
 ## stack
 - runtime - deno
-- fullstack framework - nextjs, sveltekit, or remix
 - websocket
 - tone.js
 
