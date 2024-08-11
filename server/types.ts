@@ -66,18 +66,18 @@ export class Lobby {
     }
 
     generateLobbyCode(): string {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const charactersLength = characters.length;
+        let result = '';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const charactersLength = characters.length;
 
-    for (let i = 0; i < this.lobbieCodeLength; i++) {
-        const randomIndex = Math.floor(Math.random() * charactersLength);
-        result += characters[randomIndex];
+        for (let i = 0; i < this.lobbieCodeLength; i++) {
+            const randomIndex = Math.floor(Math.random() * charactersLength);
+            result += characters[randomIndex];
+        }
+
+        console.log(`new lobbie code is ${result}`);
+        return result;
     }
-
-    console.log(`new lobbie code is ${result}`);
-    return result;
-}
 }
 
 export class User {

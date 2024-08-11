@@ -23,11 +23,11 @@ Deno.serve({
 
         switch(message_obj.type) {
 
-          case  'host_request':
+          case 'host_request':
             lobbie_list.add_lobbie(message_obj.hoster_name);
             break;
 
-          case "join_request":
+          case 'join_request':
             lobbie_list.add_user_to_lobbie(new User(message_obj.user_name), message_obj.lobbie_code);
             break;
         }
