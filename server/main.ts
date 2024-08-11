@@ -1,3 +1,5 @@
+let host_list: any[] = [];
+
 Deno.serve({
   port: 80,
   handler: async (request) => {
@@ -11,7 +13,14 @@ Deno.serve({
       };
       socket.onmessage = (event) => {
         console.log(`RECEIVED: ${event.data}`);
-        socket.send("pong");
+        const message_obj = JSON.parse(event.data);
+
+        console.log("got a message from the client", message_obj);
+        if (message_obj.type == "host_request") {
+          host_list.push(message_obj.hoster_name);
+          
+          console.log("host list: ", host_list)
+        }
       };
       socket.onclose = () => console.log("DISCONNECTED");
       socket.onerror = (error) => console.error("ERROR:", error);
@@ -25,3 +34,4 @@ Deno.serve({
     }
   },
 });
+
