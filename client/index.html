@@ -1,6 +1,11 @@
 <!doctype html>
-<h2>WebSocket Test</h2>
-<p>Sends a ping every five seconds</p>
+<h2>RINGTONE</h2>
+<label for="fname">enter your name:</label>
+<input type="text" id="fname" name="fname"><br><br>
+<label for="lobbyId">enter the lobby id:</label>
+<input type="text" id="lobbyId" name="lobbyId"><br><br>
+<button onclick="onClickConnect()" type="button">connect!</button> 
+<button onclick="onClickHost()" type="button">host a lobby!</button> 
 <div id="output"></div>
 <script>
   const wsUri = "ws://127.0.0.1/";
@@ -17,12 +22,18 @@
     websocket.send(message);
   }
 
+  function onClickHost() {
+    const msg = {
+        type: "host_request",
+        hoster_name: document.getElementById("fname").value,
+        date: Date.now(),
+    }
+    writeToScreen(`sent my name to teh server :3}`);
+    websocket.send(JSON.stringify(msg));
+  }
+
   websocket.onopen = (e) => {
     writeToScreen("CONNECTED");
-    sendMessage("ping");
-    pingInterval = setInterval(() => {
-      sendMessage("ping");
-    }, 5000);
   };
 
   websocket.onclose = (e) => {
