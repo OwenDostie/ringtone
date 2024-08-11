@@ -22,6 +22,8 @@ deno run --allow-net=0.0.0.0:80 --allow-read=client/index.html server/main.ts
 - front-end framework
 - embed ai chat bot that makes the song for you
 - banned names
+- pen testing
+- fetch api / axios for client/server communication
 
 ## links
 - react - https://react.dev/learn
