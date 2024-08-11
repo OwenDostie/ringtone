@@ -2,10 +2,10 @@
 <h2>RINGTONE</h2>
 <label for="fname">enter your name:</label>
 <input type="text" id="fname" name="fname"><br><br>
-<label for="lobbyId">enter the lobby id:</label>
-<input type="text" id="lobbyId" name="lobbyId"><br><br>
-<button onclick="onClickConnect()" type="button">connect!</button> 
-<button onclick="onClickHost()" type="button">host a lobby!</button> 
+<label for="lobbieId">enter the lobbie id:</label>
+<input type="text" id="lobbieId" name="lobbieId">
+<button onclick="onClickJoinLobby()" type="button">join lobbie!</button> <br><br>
+<button onclick="onClickHost()" type="button">host a lobbie!</button> 
 <div id="output"></div>
 <script>
   const wsUri = "ws://127.0.0.1/";
@@ -20,6 +20,17 @@
   function sendMessage(message) {
     writeToScreen(`SENT: ${message}`);
     websocket.send(message);
+  }
+
+  function onClickJoinLobby() {
+    const msg = {
+        type: "join_request",
+        user_name: document.getElementById("fname").value,
+        lobbie_code: document.getElementById("lobbieId").value,
+        date: Date.now(),
+    }
+    writeToScreen(`tryna JOIN UP lobbie ${msg.lobbie_code}`);
+    websocket.send(JSON.stringify(msg));
   }
 
   function onClickHost() {
