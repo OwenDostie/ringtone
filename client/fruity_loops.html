@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Audio API Example</title>
+</head>
+<body>
+    <h1>Web Audio API Example</h1>
+    <input type="range" id="volumeSlider" min="0" max="100" value="2">
+    <br>
+    <button id="playTone">Play Test Tone</button>
+    <button id="startRecording">Start Recording</button>
+    <button id="stopRecording" disabled>Stop Recording</button>
+    <button id="playRecording" disabled>Play Recording</button>
+    <audio id="recordingPlayback" controls></audio>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(.02, audioCtx.currentTime)
+
+        // 1. Play a simple test tone
+        document.getElementById('playTone').addEventListener('click', () => {
+            const oscillator = audioCtx.createOscillator();
+            oscillator.type = 'sawtooth'; // Type of wave: sine, square, sawtooth, triangle
+            oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // A4 note (440 Hz)
+            // lower the volume
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            // play the sound
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 1); // Play the tone for 1 second
+        });
+
+        document.getElementById('volumeSlider').addEventListener('input', (event) => {
+            const volume = Math.pow(6, event.target.value/100)/6 - 1/6;
+            gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+        }
+    )
+
+        // Variables for recording and playback
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        // 2. Record audio via microphone
+        document.getElementById('startRecording').addEventListener('click', async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = event => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                const url = URL.createObjectURL(blob);
+                const audio = document.getElementById('recordingPlayback');
+                audio.src = url;
+                audio.controls = true;
+                recordedChunks = []; // Reset for next recording
+
+                document.getElementById('playRecording').disabled = false;
+            };
+
+            mediaRecorder.start();
+            document.getElementById('startRecording').disabled = true;
+            document.getElementById('stopRecording').disabled = false;
+        });
+
+        // Stop recording
+        document.getElementById('stopRecording').addEventListener('click', () => {
+            mediaRecorder.stop();
+            document.getElementById('startRecording').disabled = false;
+            document.getElementById('stopRecording').disabled = true;
+        });
+
+        // Play the recorded audio
+        document.getElementById('playRecording').addEventListener('click', () => {
+            const audio = document.getElementById('recordingPlayback');
+            audio.play();
+        });
+    </script>
+</body>
