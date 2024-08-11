@@ -20,6 +20,7 @@ deno run --allow-net=0.0.0.0:80 --allow-read=client/index.html server/main.ts
 ## would be nice
 - tsl on websocket aka wss
 - front-end framework
+- embed ai chat bot that makes the song for you
 
 ## links
 - react - https://react.dev/learn
