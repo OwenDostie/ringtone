@@ -13,7 +13,7 @@ deno run --allow-net=0.0.0.0:80 --allow-read=client/index.html server/main.ts
 ## requirements
 - cross-platform server setup w/ deno
 - single server process handles rooms and active games
-- client side lobbie ux for room code + username + pick game mode + see other players
+- client side lobby ux for room code + username + pick game mode + see other players
 - client side midi daw w/ playback, editing, saving
 - way of transferring midi files from client to server and vice versa. with maybe project file metadata
 

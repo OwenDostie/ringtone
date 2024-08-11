@@ -1,53 +1,84 @@
-export class LobbyList {
+import * as uuid from "jsr:@std/uuid";
 
-    lobbie_list: Lobby[];
+export class LobbyList {
+    lobby_list: Lobby[];
 
     constructor() {
-        this.lobbie_list = [];
+        this.lobby_list = [];
     }
 
-    add_lobbie(host: User) {
-        let new_lobbie_valid = false;
-        let new_lobbie = new Lobby(host);
+    add_lobby(host: User): Lobby {
+        let new_lobby_valid = false;
+        let new_lobby = new Lobby(host);
 
-        while (!new_lobbie_valid) {
+        while (!new_lobby_valid) {
             
-            // Check the lobbie list to make sure the generated code isn't already in use
-            let new_lobbie_code_valid = true;
-            this.lobbie_list.forEach((lobbie) => {
-                if (lobbie.code == new_lobbie.code) {
-                    new_lobbie_code_valid = false;
+            // Check the lobby list to make sure the generated code isn't already in use
+            new_lobby_valid = true;
+            this.lobby_list.forEach((lobby) => {
+                if (lobby.code == new_lobby.code) {
+                    new_lobby_valid = false;
                 }
             })
-            new_lobbie_valid = new_lobbie_code_valid;
             
             // Lobby was not valid, code already in use. Make a new one.
-            if (!new_lobbie_valid) {
-                new_lobbie = new Lobby(host);
+            if (!new_lobby_valid) {
+                console.log('making a new lobby cuz that one was shit');
+                new_lobby = new Lobby(host);
             }
         }
 
-        this.lobbie_list.push(new_lobbie);
-        console.log(`successfully created lobbie with code ${new_lobbie.code}`);
+        this.lobby_list.push(new_lobby);
+
+        console.log(`successfully created lobby with code ${new_lobby.code}`);
+        return new_lobby;
     }
 
-    add_user_to_lobbie(user: User, lobbie_code: string) {
+    add_user_to_lobby(user: User, lobby_code: string) {
         let success = false;
-        this.lobbie_list.forEach((lobbie) => {
-            if (lobbie.code == lobbie_code) {
-                lobbie.add_user(user);
-                console.log(`added user ${user.name} to lobbie with code ${lobbie.code}`);
+        this.lobby_list.forEach((lobby) => {
+            if (lobby.code == lobby_code) {
+                lobby.add_user(user);
+                console.log(`added user ${user.name} to lobby with code ${lobby.code}`);
+                success = true;
+                user.set_lobby_code(lobby.code)
+            }
+        })
+        if (!success) {
+            console.log(`when adding, culd not find lobby with code ${lobby_code}`);
+        }
+    }
+
+    remove_user_from_lobby(user: User, lobby_code: string) {
+        let success = false;
+        this.lobby_list.forEach((lobby) => {
+            if (lobby.code == lobby_code) {
+                lobby.remove_user(user);
+                console.log(`removed user ${user.name} from lobby with code ${lobby.code}`);
                 success = true;
             }
         })
         if (!success) {
-            console.log(`culd not find lobbie with code ${lobbie_code}`);
+            console.log(`when removing, culd not find lobby with code ${lobby_code}`);
         }
+    }
+
+    get_lobby_with_code(lobby_code: string): Lobby | undefined {
+        let ret_val: Lobby | undefined = undefined;
+        this.lobby_list.forEach( lobby => {
+            console.log(`looking at lobby: ${lobby.code}`);
+            if (lobby.code == lobby_code) {
+                ret_val = lobby;
+            }
+        })
+        console.log(`lobbylsit: couldn't find lobby with id ${lobby_code}`);
+
+        return ret_val;
     }
 }
 
 export class Lobby {
-    readonly lobbieCodeLength = 4;
+    readonly lobbyCodeLength = 4;
 
     id: string;
     code: string;
@@ -65,26 +96,73 @@ export class Lobby {
         this.user_list.push(user);
     }
 
+    remove_user(user_to_remove: User) {
+        this.user_list.filter(user => user.id !== user_to_remove.id);
+    }
+
+    broadcast(message: any, socket_map: Map<string, WebSocket> ) {
+        this.user_list.forEach(user => {
+            const socket = socket_map.get(user.id);
+            if (socket) {
+                console.log(`found a socket for user ${user.name}`);
+                socket.send(message);
+            }
+        })
+
+    }
+
+    make_lobby_update_message_string(): string {
+        const members = this.user_list.map(user => user.name);
+        const lobby_update_message = {
+            type: 'lobby_update',
+            members: members,
+            code: this.code
+        }
+
+        return JSON.stringify(lobby_update_message);
+    }
+
+    broadcast_lobby_update(socket_map: Map<string, WebSocket>) {
+        this.broadcast(this.make_lobby_update_message_string(), socket_map);
+    }
+
     generateLobbyCode(): string {
         let result = '';
         const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         const charactersLength = characters.length;
 
-        for (let i = 0; i < this.lobbieCodeLength; i++) {
+        for (let i = 0; i < this.lobbyCodeLength; i++) {
             const randomIndex = Math.floor(Math.random() * charactersLength);
             result += characters[randomIndex];
         }
 
-        console.log(`new lobbie code is ${result}`);
+        console.log(`new lobby code is ${result}`);
         return result;
+    }
+
+    print_user_list() {
+        for (const user of this.user_list) {
+            console.log("name: " + user.name + "\t id: " + user.id + "\n");
+        }
     }
 }
 
 export class User {
     name: string;
     id: string;
+    lobby_code: string;
 
-    constructor(name: string) {
+    constructor() {
+        this.id = uuid.v1.generate();
+        // Create UUID for connected socket
+    }
+
+    set_name(name: string) {
         this.name = name;
     }
+
+    set_lobby_code(lobby_code: string) {
+        this.lobby_code = lobby_code;
+    }
+
 }

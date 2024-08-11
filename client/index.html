@@ -2,14 +2,24 @@
 <h2>RINGTONE</h2>
 <label for="fname">enter your name:</label>
 <input type="text" id="fname" name="fname"><br><br>
-<label for="lobbieId">enter the lobbie id:</label>
-<input type="text" id="lobbieId" name="lobbieId">
-<button onclick="onClickJoinLobby()" type="button">join lobbie!</button> <br><br>
-<button onclick="onClickHost()" type="button">host a lobbie!</button> 
+<label for="lobbyId">enter the lobby id:</label>
+<input type="text" id="lobbyId" name="lobbyId">
+<button onclick="onClickJoinLobby()" type="button">join lobby!</button> <br><br>
+<button onclick="onClickHost()" type="button">host a lobby!</button> 
 <div id="output"></div>
+<div id="lobbyMemberList">
+  <h3>lobby member list</h3><br>
+    <ul id="membersList"></ul>
+  <h2>connected to lobby with code: </h3>
+    <h2 id="lobbyCode"></h2>
+    <br>
+</div>
+
 <script>
   const wsUri = "ws://127.0.0.1/";
   const output = document.querySelector("#output");
+  const membersList = document.querySelector("#membersList");
+  const lobbyCode = document.querySelector("#lobbyCode");
   const websocket = new WebSocket(wsUri);
   let pingInterval;
 
@@ -26,10 +36,10 @@
     const msg = {
         type: "join_request",
         user_name: document.getElementById("fname").value,
-        lobbie_code: document.getElementById("lobbieId").value,
+        lobby_code: document.getElementById("lobbyId").value,
         date: Date.now(),
     }
-    writeToScreen(`tryna JOIN UP lobbie ${msg.lobbie_code}`);
+    writeToScreen(`tryna JOIN UP lobby ${msg.lobby_code}`);
     websocket.send(JSON.stringify(msg));
   }
 
@@ -54,9 +64,33 @@
 
   websocket.onmessage = (e) => {
     writeToScreen(`RECEIVED: ${e.data}`);
+
+    const message_obj = JSON.parse(e.data);
+
+    // big switch case for handling mesasges from the server
+    switch(message_obj.type) {
+      case 'lobby_update':
+        console.log('got a message for lobby update')
+        updateLobbyMemberList(message_obj.members);
+        updateLobbyCode(message_obj.code);
+    }
   };
 
   websocket.onerror = (e) => {
     writeToScreen(`ERROR: ${e.data}`);
   };
+
+  function updateLobbyMemberList(members) {
+    membersList.innerHTML = '';
+
+    members.forEach(member => {
+      const listItem = document.createElement('li');
+      listItem.textContent = member;
+      membersList.appendChild(listItem);
+    });
+  }
+
+  function updateLobbyCode(code) {
+    lobbyCode.innerHTML = code;
+  }
 </script>
