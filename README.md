@@ -2,11 +2,12 @@
 
 ## How to run the server
 ```
-deno run --allow-net=0.0.0.0:80 --allow-read=client/index.html server/main.ts
+deno task start
 ```
 
 ## stack
 - runtime - deno
+- front end: vue
 - websocket
 - tone.js
 
@@ -31,4 +32,8 @@ deno run --allow-net=0.0.0.0:80 --allow-read=client/index.html server/main.ts
 - deno - https://docs.deno.com/runtime/manual/getting_started/web_frameworks/
 - tone.js - https://tonejs.github.io/
 - signal (example daw) - https://github.com/ryohey/signal
-
+- vue & deno tutorial https://docs.deno.com/runtime/tutorials/how_to_with_npm/vue/
+    - this also says if you run this command you can create a template project with ANY FRONTEND FRAMEOWKR
+```
+deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
+```

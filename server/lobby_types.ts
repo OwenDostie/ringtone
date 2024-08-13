@@ -1,5 +1,7 @@
 import * as uuid from "jsr:@std/uuid";
 
+import {Game} from './game_types.ts'
+
 export class LobbyList {
     lobby_list: Lobby[];
 

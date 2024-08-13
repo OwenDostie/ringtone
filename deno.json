@@ -1,0 +1,7 @@
+{
+  "tasks": {
+    "build": "vite build",
+    "serve": "deno run -A --node-modules-dir server/main.ts",
+    "start": "deno task build && deno task serve"
+  }
+}
