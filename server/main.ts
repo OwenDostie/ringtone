@@ -21,6 +21,8 @@ const staticDir = fromFileUrl(new URL("../dist/", import.meta.url));
 let lobby_list: LobbyList = new LobbyList();
 let user_sockets = new Map<string, WebSocket>();
 
+console.log("fuck");
+
 Deno.serve({
   port: 80,
   handler: async (request) => {
