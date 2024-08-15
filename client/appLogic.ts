@@ -1,5 +1,5 @@
 
-import { ref } from 'vue';
+import { ref } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 
 const websocket = ref<WebSocket | null>(null); // Reactive reference to store the WebSocket instance
 
