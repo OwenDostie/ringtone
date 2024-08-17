@@ -1,77 +1,87 @@
 
 import { ref } from 'vue';
+import { reactive, readonly, onMounted, onBeforeUnmount } from 'vue';
 
-const websocket = ref<WebSocket | null>(null); // Reactive reference to store the WebSocket instance
+export interface WebSocketState {
+    socket: WebSocket | null;
+    isConnected: boolean;
+    lobbyMembers: string[];
+    lobbyCode: string | null;
+  }
+  
+  const state = reactive<WebSocketState>({
+    socket: null,
+    isConnected: false,
+    lobbyMembers: [],
+    lobbyCode: null,
+  });
 
-export function setup_websocket() {
+
+function connectWebsocket() {
     const wsUri = "ws://127.0.0.1/";
-    websocket.value = new WebSocket(wsUri);
 
-    websocket.value.onopen = (e) => {
-    writeToScreen("CONNECTED");
+    if (state.socket) {
+        console.warn('WebSocket already connected.');
+        return;
+    }
+    const socket = new WebSocket(wsUri);
+
+    socket.onopen = (e) => {
+    console.log("CONNECTED");
+        state.isConnected = true;
     };
 
-    websocket.value.onclose = (e) => {
-    writeToScreen("DISCONNECTED");
+    socket.onclose = (e) => {
+    console.log("DISCONNECTED");
     };
 
-    websocket.value.onmessage = (e) => {
-    writeToScreen(`RECEIVED: ${e.data}`);
+    socket.onmessage = (e) => {
+    console.log(`RECEIVED: ${e.data}`);
 
     const message_obj = JSON.parse(e.data);
 
-    // big switch case for handling mesasges from the server
-    switch(message_obj.type) {
-        case 'lobby_update':
-        console.log('got a message for lobby update')
-        updateLobbyMemberList(message_obj.members);
-        updateLobbyCode(message_obj.code);
+        // big switch case for handling mesasges from the server
+        switch(message_obj.type) {
+            case 'lobby_update':
+            console.log('got a message for lobby update')
+            state.lobbyMembers = message_obj.members;
+            state.lobbyCode = message_obj.code;
+        }
+
+    };
+    socket.onerror = (e) => {
+    console.log(`ERROR: ${e.data}`);
     }
-    };
 
-    websocket.value.onerror = (e) => {
-    writeToScreen(`ERROR: ${e.data}`);
-    };
+    state.socket = socket;
 }
 
-function writeToScreen(message) {
-    const output = document.querySelector("#output");
-    output.insertAdjacentHTML("afterbegin", `<p>${message}</p>`);
+function disconnectWebsocket() {
+    if (state.socket) {
+      state.socket.close();
+    }
 }
 
-function updateLobbyMemberList(members) {
-    const membersList = document.querySelector("#membersList");
-    membersList.innerHTML = '';
+export function sendMessage(message: string) {
+    if (state.socket && state.isConnected) {
+      state.socket.send(message);
+    } else {
+      console.warn('Cannot send message: WebSocket is not connected.');
+    }
+}
 
-    members.forEach(member => {
-        const listItem = document.createElement('li');
-        listItem.textContent = member;
-        membersList.appendChild(listItem);
+
+export function setupWebsocket() {
+    onMounted(() => {
+      connectWebsocket();
     });
-}
-
-function updateLobbyCode(code) {
-    const lobbyCode = document.querySelector("#lobbyCode");
-    lobbyCode.innerHTML = code;
-}
-
-export function onClickJoinLobby() {
-    const msg = {
-        type: "join_request",
-        user_name: document.getElementById("fname").value,
-        lobby_code: document.getElementById("lobbyId").value,
-        date: Date.now(),
-    }
-    writeToScreen(`tryna JOIN UP lobby ${msg.lobby_code}`);
-    websocket.value.send(JSON.stringify(msg));
-}
-
-export function onClickHost() {
-    const msg = {
-        type: "host_request",
-        hoster_name: document.getElementById("fname").value,
-        date: Date.now(),
-    }
-    writeToScreen(`sent my name to teh server :3}`);
-    websocket.value.send(JSON.stringify(msg));
-}
+  
+    onBeforeUnmount(() => {
+      disconnectWebsocket();
+    });
+  
+    return {
+      state: readonly(state),
+      sendMessage,
+    };
+  }
