@@ -1,5 +1,5 @@
 <template>
-  <h2>GAME TIME!</h2>
+  <h2>GamePage</h2>
   <div id="lobbyInfo">
     <h2>connected to lobby with code: </h2>
       <h2 id="lobbyCode"></h2>

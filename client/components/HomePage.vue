@@ -1,5 +1,5 @@
 <template>
-  <h2>RINGTONE</h2>
+  <h2>HomePage</h2>
   <label for="fname">enter your name:</label>
   <input type="text" id="fname" name="fname"><br><br>
   <label for="lobbyId">enter the lobby id:</label>
@@ -14,14 +14,14 @@
 
 <script lang="ts">
   import { onClickHost, onClickJoinLobby } from '../appLogic.ts'
-  import {defineComponent} from 'vue'
+  import { defineComponent } from 'vue'
 
   export default defineComponent({
   name: 'HomePage',
   methods: {
-   onClickHost, onClickJoinLobby 
-  }
-  });
+    onClickHost, onClickJoinLobby 
+    }
+  })
 </script>
 
 <style scoped>
