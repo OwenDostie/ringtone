@@ -42,3 +42,8 @@ deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
 - sveltekit has a deno adapter. can share types between frontend and backend.
 - websocket
 - matt would use sveltekit, no experience doing sync state but first guess is websocket. suggested starting with a chat. node is the default runtime that seems to have the fewest problems just because its the default. sveltekit has an adapter so that it can run on any rumtime. there's another one out there called bun which seems to be an improvement. vite comes with sveltekit / is the default. 
+
+omar todo:
+- error handling for buttons and lobby hosting/joining
+- format game page better
+- uploading and sending audio

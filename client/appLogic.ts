@@ -43,9 +43,13 @@ function connectWebsocket() {
         // big switch case for handling mesasges from the server
         switch(message_obj.type) {
             case 'lobby_update':
-            console.log('got a message for lobby update')
-            state.lobbyMembers = message_obj.members;
-            state.lobbyCode = message_obj.code;
+            console.log(`got a message for lobby update, lobby ocde ${message_obj.code}`)
+            state.lobbyMembers.length = 0; // Clear the array while maintaining reactivity
+            state.lobbyMembers.push(...message_obj.members); // Push the new members
+            state.lobbyCode = ''; // Temporarily set to empty string
+            state.lobbyCode = message_obj.code; // Now set to the actual code
+            console.log(`lobby asdfkjasd;lkfjcode:${state.lobbyCode}`)
+            break;
         }
 
     };
@@ -55,6 +59,8 @@ function connectWebsocket() {
 
     state.socket = socket;
 }
+
+export { state };
 
 function disconnectWebsocket() {
     if (state.socket) {
