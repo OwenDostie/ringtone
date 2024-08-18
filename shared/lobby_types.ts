@@ -2,6 +2,8 @@ import * as uuid from "jsr:@std/uuid";
 
 import {Game} from './game_types.ts'
 
+export interface LobbyListInterface
+
 export class LobbyList {
     lobby_list: Lobby[];
 

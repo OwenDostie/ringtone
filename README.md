@@ -47,3 +47,6 @@ omar todo:
 - format game page better
 - uploading and sending audio
 - back button 
+- game flow
+- handle disconnects better
+- format lobby member list better 

@@ -10,7 +10,7 @@
 
 <script lang="ts">
 import { defineComponent, provide } from 'vue';
-import { setupWebsocket } from './appLogic.ts';
+import { setupWebsocket } from './websocket.ts';
 
 export default defineComponent({
   setup() {

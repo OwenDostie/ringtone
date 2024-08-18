@@ -22,7 +22,7 @@
 <script lang="ts">
 import { defineComponent, ref, inject, computed } from 'vue';
 import { useRouter } from 'vue-router'; // Import the router function
-import { WebSocketState } from '../appLogic'; // Adjust the import path as needed
+import { WebSocketState } from '../websocket'; // Adjust the import path as needed
 
 export default defineComponent({
   name: 'HomePage',

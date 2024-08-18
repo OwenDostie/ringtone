@@ -17,13 +17,16 @@
 
 <script lang="ts">
   import { defineComponent, inject, ref } from 'vue';
-  import { WebSocketState } from '../appLogic';
+  import { WebSocketState } from '../websocket';
   import Timer from './Timer.vue'
 
   export default defineComponent({
   name: 'GamePage',
   components: {
     Timer
+  },
+  props: {
+    isHost: boolean,
   },
   data() {
     return {
