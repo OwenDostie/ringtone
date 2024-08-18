@@ -13,17 +13,9 @@
       type: Boolean,
       default: true,
     },
-    resetWhenStart: {
-      type: Boolean,
-      default: false,
-    },
-    restWhenStop: {
-      type: Boolean,
-      default: false,
-    },
     startTime: {
       type: Number,
-      default: 60 * 8 * 1000, // 8 minutes in milliseconds
+      default: 5 * 1000,
     },
   },
   watch: {
@@ -40,18 +32,18 @@
   },
   methods: {
     stopT() {
+      this.time = 0;
       clearInterval(this.timer);
-      if (this.restWhenStop) this.resetT();
     },
     startT() {
-      if (this.resetWhenStart) this.resetT();
-      this.time = this.startTime;
+      this.resetT();
       this.timer = setInterval(() => {
         if (this.time <= 0) {
-          clearInterval(this.timer);
+          this.stopT();
+          this.$emit('stopTimer')
           return;
         }
-        this.time -= 10; // Decrease by 10ms for better accuracy
+        this.time -= 10;
       }, 10);
     },
     resetT() {
@@ -63,10 +55,9 @@
   },
 };
 </script>
-  <style scoped>
-  p {
-    font-weight: bold;
-    font-size: x-large;
-  }
-  </style>
---
+<style scoped>
+p {
+font-weight: bold;
+font-size: x-large;
+}
+</style>

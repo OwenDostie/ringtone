@@ -14,7 +14,7 @@ import { inject } from 'vue';
 
 
 export default {
-  inject: ['websocketState'], // Inject the websocketState
+  inject: ['websocketState'], 
   name: 'Chat',
   setup() {
     const sendMessage = inject<(message: string) => void>('sendMessage');
@@ -32,11 +32,9 @@ export default {
     };
   },
   mounted() {
-    // Listen for messages from the WebSocket and add them to the chat
     this.websocketState.socket.addEventListener('message', this.receiveMessage);
   },
   beforeUnmount() {
-    // Clean up the WebSocket event listener
     this.websocketState.socket.removeEventListener('message', this.receiveMessage);
   },
   methods: {
@@ -46,7 +44,6 @@ export default {
     },
     sendChat() {
       if (this.newMessage.trim()) {
-        // Send the message through the WebSocket
         const message: ChatMessage = {
           sender: '',  // todo (omar) : add user data state eventually 
           content: this.newMessage,
@@ -65,18 +62,17 @@ export default {
     },
     receiveMessage(event) {
       try {
-        // Parse the incoming JSON message
         const data = JSON.parse(event.data);
+        if (data.type != 'chat_update') {
+          return;
+        }
 
-          // Convert the message timestamp to a Date object
         const chatMessage: ChatMessage = {
           sender: data.message.sender,
           content: data.message.content,
-          timestamp: new Date(data.message.timestamp) // Convert timestamp to Date
+          timestamp: new Date(data.message.timestamp),
         };
 
-
-          // Add the received message to the chat history
         this.messages.push(chatMessage);
         this.scrollToBottom;
       }
@@ -95,8 +91,8 @@ export default {
 
 <style scoped>
 .chat-message {
-  text-align: left; /* Align messages to the left */
-  margin: 5px 0;    /* Add some spacing between messages */
+  text-align: left; 
+  margin: 5px 0;
 }
 .chat-container {
   display: flex;

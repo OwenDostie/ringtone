@@ -35,7 +35,7 @@ await Deno.mkdir(uploadDir, { recursive: true }).catch((error) => {
 });
 
 serve(async (request) => {
-  const url = new URL(request.url);  // Parse the request URL
+  const url = new URL(request.url); 
   const pathname = url.pathname;     
   if (request.method === "POST" && pathname === "/upload") {
     console.log("got a file");
@@ -140,6 +140,13 @@ serve(async (request) => {
           break;
         }
         case 'game_start_request': {
+          const lobby = lobby_list.get_lobby_with_code(user.lobby_code);
+          if (!lobby) {
+            console.log('couldnt start that shit');
+            return;
+          }
+          lobby.game.start();
+          lobby.broadcast_game_start(user_sockets);
         }
         case 'round_ready': {
 
@@ -151,9 +158,7 @@ serve(async (request) => {
     };
 
     socket.onclose = () => {
-      // Remove user connected to this socket from lobby.
       lobby_list.remove_user_from_lobby(user, user.lobby_code);
-      // Remove user from the socket map
       user_sockets.delete(user.id);
       console.log("DISCONNECTED");
     }

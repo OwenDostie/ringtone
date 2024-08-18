@@ -1,4 +1,4 @@
-import { ClientGame } from "../shared/game_types";
+import { ClientGame } from "../shared/game_types.ts";
 
 import { ref, reactive, readonly, onMounted, onBeforeUnmount } from 'vue';
 

@@ -4,17 +4,25 @@ import { ref, reactive, readonly, onMounted, onBeforeUnmount } from 'vue';
 
 export interface WebSocketState {
     socket: WebSocket | null;
+    name: string;
     isConnected: boolean;
     lobbyMembers: string[];
     lobbyCode: string | null;
+    lobbyHost: string | null;
+    turn: number;
+    turnRunning: boolean;
     err: string;
   }
   
   const state = reactive<WebSocketState>({
     socket: null,
+    name: 'missingno',
     isConnected: false,
     lobbyMembers: [],
     lobbyCode: null,
+    lobbyHost: null,
+    turn: 0,
+    turnRunning: false,
     err: '',
   });
 
@@ -46,16 +54,28 @@ function connectWebsocket() {
         switch(message_obj.type) {
             case 'lobby_update': {
                 console.log(`got a message for lobby update, lobby ocde ${message_obj.code}`)
-                state.lobbyMembers.length = 0; // Clear the array while maintaining reactivity
-                state.lobbyMembers.push(...message_obj.members); // Push the new members
-                state.lobbyCode = ''; // Temporarily set to empty string
-                state.lobbyCode = message_obj.code; // Now set to the actual code
-                router.push('/game'); // Use the router to navigate
+                state.lobbyMembers.length = 0; 
+                state.lobbyMembers.push(...message_obj.members); 
+                state.lobbyCode = ''; 
+                state.lobbyCode = message_obj.code; 
+                state.lobbyHost = ''; 
+                state.lobbyHost = message_obj.host
+                state.name = message_obj.name;
+                router.push('/game'); 
                 break;
             }
             case 'failed_join_lobby': {
                 state.lobbyCode = 'failed'
                 state.err = message_obj.error_message
+                break;
+            }
+            case 'game_start': {
+                if (state.turnRunning) {
+                  console.log("this shouldn't happen")
+                  state.turnRunning = false;
+                }
+                console.log("tryan start game");
+                state.turnRunning = true;
                 break;
             }
         }

@@ -1,5 +1,5 @@
 import * as uuid from "jsr:@std/uuid";
-
+import { ServerGame } from "./game_types.ts";
 
 export interface ChatMessage {
     sender: string
@@ -91,6 +91,7 @@ export class Lobby {
     readonly lobbyCodeLength = 4;
 
     id: string;
+    game: ServerGame;
     code: string;
     host: User;
     user_list: User[];
@@ -100,6 +101,7 @@ export class Lobby {
         this.user_list = [];
         this.add_user(host);
         this.code = this.generateLobbyCode();
+        this.game = new ServerGame();
     }
 
     add_user(user: User) {
@@ -118,6 +120,14 @@ export class Lobby {
                 socket.send(message);
             }
         })
+    }
+    
+    broadcast_game_start(socket_map: Map<string, WebSocket> ) {
+        const game_start_message = {
+            type: 'game_start',
+        }
+        this.broadcast(JSON.stringify(game_start_message), socket_map);
+
 
     }
     
@@ -137,19 +147,27 @@ export class Lobby {
 
     }
 
-    make_lobby_update_message_string(): string {
+    make_lobby_update_message_string(user: User): string {
         const members = this.user_list.map(user => user.name);
         const lobby_update_message = {
             type: 'lobby_update',
+            name: user.name,
             members: members,
-            code: this.code
+            code: this.code,
+            host: this.host.name,
         }
 
         return JSON.stringify(lobby_update_message);
     }
 
     broadcast_lobby_update(socket_map: Map<string, WebSocket>) {
-        this.broadcast(this.make_lobby_update_message_string(), socket_map);
+        this.user_list.forEach(user => {
+            const socket = socket_map.get(user.id);
+            if (socket) {
+                console.log(`found a socket for user ${user.name}`);
+                socket.send(this.make_lobby_update_message_string(user));
+            }
+        })
     }
 
     generateLobbyCode(): string {
