@@ -9,13 +9,12 @@
     <label for="requestedLobbyCode">Enter the lobby code:</label>
     <input v-model="requestedLobbyCode" type="text" id="requestedLobbyCode" name="requestedLobbyCode"><br><br>
   </div>
-
-  <button @click="onClickJoinLobby" type="button">Join Lobby!</button><br>
+  <div style="display: flex; justify-content: space-around;">
+    <button @click="onClickJoinLobby" type="button">Join Lobby!</button><br>
+    <button @click="onClickHost" type="button">Host a Lobby!</button><br>
+  </div>
   <div v-if="lobbyCode != 'failed'">{{ joinLobbyFailureMessage }}</div>
   <div v-else-if="lobbyCode == 'failed'"> {{ serverError }}</div>
-  <br>
-  <br>
-  <button @click="onClickHost" type="button">Host a Lobby!</button><br>
   <span>{{ hostLobbyFailureMessage }}</span>
 </template>
 
