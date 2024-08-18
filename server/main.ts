@@ -17,18 +17,69 @@ const mimeTypes: Record<string, string> = {
 };
 
 const staticDir = fromFileUrl(new URL("../dist/", import.meta.url));
+const uploadDir = './uploads'; // Directory where files will be uploaded
 
 let lobby_list: LobbyList = new LobbyList();
 let user_sockets = new Map<string, WebSocket>();
 
 console.log("fuck");
 
+await Deno.mkdir(uploadDir, { recursive: true }).catch((error) => {
+  if (error instanceof Deno.errors.AlreadyExists) {
+    console.log("Upload directory already exists");
+  } else {
+    throw error;
+  }
+});
+
 Deno.serve({
   port: 80,
   handler: async (request) => {
+    const url = new URL(request.url);  // Parse the request URL
+    const pathname = url.pathname;     
+    if (request.method === "POST" && pathname === "/upload") {
+      console.log("got a file");
+      // Handle file upload
+      const formData = await request.formData();
+      const file = formData.get("file") as File;
+
+      if (file) {
+        console.log("file valid");
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        await Deno.writeFile(`./uploads/${file.name}`, uint8Array);
+        return new Response("File uploaded successfully", { status: 200 });
+      }
+
+      return new Response("No file uploaded", { status: 400 });
+    }
+    else if (request.method === "GET" && pathname.startsWith("/uploads/")) {
+      // Serve the audio file from the uploads directory
+      const filePath = `.${pathname}`;
+      try {
+        const file = await Deno.readFile(filePath);
+        const fileExt = extname(filePath);
+        const contentType = mimeTypes[fileExt] || "application/octet-stream";
+
+        return new Response(file, {
+          status: 200,
+          headers: {
+            "content-type": contentType,
+          },
+        });
+      } catch (error) {
+        console.error("Error serving file:", error);
+        if (error instanceof Deno.errors.NotFound) {
+          return new Response("404 Not Found", { status: 404 });
+        } else {
+          return new Response("500 Internal Server Error", { status: 500 });
+        }
+      }
+    }
+
     // If the request is a websocket upgrade,
     // we need to use the Deno.upgradeWebSocket helper
-    if (request.headers.get("upgrade") === "websocket") {
+    else if (request.headers.get("upgrade") === "websocket") {
       const { socket, response } = Deno.upgradeWebSocket(request);
 
       let user = new User();

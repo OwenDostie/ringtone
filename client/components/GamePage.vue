@@ -8,6 +8,12 @@
         <li v-for="member in lobbyMembers" :key="member">{{ member }}</li>
       </ul>
   </div>
+  <div>
+    <input type="file" @change="handleFileUpload" />
+    <button @click="uploadFile">Upload File</button>
+    <p v-if="uploadMessage">{{ uploadMessage }}</p>
+  </div>
+
 </template>
 
 <script lang="ts">
@@ -16,6 +22,42 @@
 
   export default defineComponent({
   name: 'GamePage',
+  data() {
+    return {
+      selectedFile: null,
+      uploadMessage: '',
+    };
+  },
+  methods: {
+    handleFileUpload(event) {
+      this.selectedFile = event.target.files[0];
+    },
+    async uploadFile() {
+      if (!this.selectedFile) {
+        this.uploadMessage = "Please select a file to upload.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', this.selectedFile);
+
+      try {
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          this.uploadMessage = "File uploaded successfully!";
+        } else {
+          this.uploadMessage = "Failed to upload file.";
+        }
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        this.uploadMessage = "An error occurred during file upload.";
+      }
+    },
+  },
   setup() {
     const websocketState = inject<WebSocketState>('websocketState');
 
