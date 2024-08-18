@@ -29,6 +29,7 @@ deno task start
 
 ## links
 - react - https://react.dev/learn
+- cam recommended svg store - https://thenounproject.com/
 - deno - https://docs.deno.com/runtime/manual/getting_started/web_frameworks/
 - tone.js - https://tonejs.github.io/
 - signal (example daw) - https://github.com/ryohey/signal
@@ -37,16 +38,3 @@ deno task start
 ```
 deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
 ```
-
-## yapping with matt
-- sveltekit has a deno adapter. can share types between frontend and backend.
-- websocket
-- matt would use sveltekit, no experience doing sync state but first guess is websocket. suggested starting with a chat. node is the default runtime that seems to have the fewest problems just because its the default. sveltekit has an adapter so that it can run on any rumtime. there's another one out there called bun which seems to be an improvement. vite comes with sveltekit / is the default. 
-
-omar todo:
-- format game page better
-- uploading and sending audio
-- back button 
-- game flow
-- handle disconnects better
-- format lobby member list better 

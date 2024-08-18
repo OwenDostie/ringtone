@@ -4,7 +4,7 @@
       <a href="https://github.com/OwenDostie/ringtone" target="_blank">
         <img src="/client/assets/img/ringtone.png" class="logotype"></img>
       </a>
-      <p>{{ state.isConnected }}</p>
+      <img :src="state.isConnected ? 'socketConnected.png' : 'socketDisconnected.png'" class="websocket-indicator" :title="JSON.stringify(state)"></img>
     </div>
       <audio src="/ringtone1.mp3" autoplay></audio>
       <router-view />
@@ -31,12 +31,17 @@ export default defineComponent({
 <style scoped>
 .floating-nav {
   position: absolute;
-  display: flexbox;
-  top: 12px;
-  left: 12px;
+  display: flex;
+  top: 7px;
+  left: 7px;
 }
 .logotype {
   width: min(120px, 100vw);
   height: auto
+}
+.websocket-indicator {
+  width: 12px;
+  height: 12px;
+  padding: 12px;
 }
 </style>

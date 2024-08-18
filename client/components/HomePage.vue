@@ -1,27 +1,18 @@
 <template>
   <h2>RINGTONE</h2>
   <div :class="{ shake: invalidName }">
-  <label for="fname">Enter your name:</label>
-  <input v-model="userName" type="text" id="fname" name="fname"><br><br>
+    <label for="fname">Enter your name:</label>
+    <input v-model="userName" type="text" id="fname" name="fname">
+    <br>
+    <br>
   </div>
-
   <div :class="{ shake: invalidLobbyCode }">
     <label for="clientLobbyCode">Enter the lobby code:</label>
     <input v-model="clientLobbyCode" type="text" id="clientLobbyCode" name="clientLobbyCode"><br><br>
   </div>
   <div style="display: flex; justify-content: space-around;">
-    <button 
-      @click="onClickJoinLobby" 
-      type="button" 
-      :disabled="invalidName || invalidLobbyCode"
-      >Join Lobby!
-    </button>
-    <button 
-      @click="onClickHostLobby" 
-      type="button" 
-      :disabled="invalidName"
-      >Host a Lobby!
-    </button>
+    <button @click="onClickJoinLobby" type="button" :disabled="invalidName || invalidLobbyCode">Join Lobby! </button>
+    <button @click="onClickHostLobby" type="button" :disabled="invalidName" >Host a Lobby! </button>
   </div>
   <div v-if="lobbyCode != 'failed'">{{ joinLobbyFailureMessage }}</div>
   <div v-else-if="lobbyCode == 'failed'"> {{ serverError }}</div>
