@@ -6,12 +6,22 @@
   </div>
 
   <div :class="{ shake: invalidLobbyCode }">
-    <label for="requestedLobbyCode">Enter the lobby code:</label>
-    <input v-model="requestedLobbyCode" type="text" id="requestedLobbyCode" name="requestedLobbyCode"><br><br>
+    <label for="clientLobbyCode">Enter the lobby code:</label>
+    <input v-model="clientLobbyCode" type="text" id="clientLobbyCode" name="clientLobbyCode"><br><br>
   </div>
   <div style="display: flex; justify-content: space-around;">
-    <button @click="onClickJoinLobby" type="button">Join Lobby!</button><br>
-    <button @click="onClickHost" type="button">Host a Lobby!</button><br>
+    <button 
+      @click="onClickJoinLobby" 
+      type="button" 
+      :disabled="invalidName || invalidLobbyCode"
+      >Join Lobby!
+    </button>
+    <button 
+      @click="onClickHostLobby" 
+      type="button" 
+      :disabled="invalidName"
+      >Host a Lobby!
+    </button>
   </div>
   <div v-if="lobbyCode != 'failed'">{{ joinLobbyFailureMessage }}</div>
   <div v-else-if="lobbyCode == 'failed'"> {{ serverError }}</div>
@@ -19,103 +29,104 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, inject, computed } from 'vue';
-import { useRouter } from 'vue-router'; // Import the router function
-import { WebSocketState } from '../websocket'; // Adjust the import path as needed
+import { defineComponent, ref, watch, inject, computed } from 'vue'
+import { useRouter } from 'vue-router' // Import the router function
+import { WebSocketState } from '../websocket' // Adjust the import path as needed
 
 export default defineComponent({
   name: 'HomePage',
   setup() {
     const router = useRouter(); // Access the router instance
-    const websocketState = inject<WebSocketState>('websocketState');
-    const sendMessage = inject<(message: string) => void>('sendMessage');
-    const invalidName = ref(false)
-    const invalidLobbyCode = ref(false)
+    const websocketState = inject<WebSocketState>('websocketState')
+    const sendMessage = inject<(message: string) => void>('sendMessage')
+    const userName = ref<string>('')
+    const clientLobbyCode = ref<string>('')
+    const invalidName = ref<boolean>(true)
+    const invalidLobbyCode = ref<boolean>(true)
     const hostLobbyFailureMessage = ref('')
     const joinLobbyFailureMessage = ref('')
 
+    // Asynchronously watch, constrain, & validate userName and clientLobbyCode
+    watch(userName, (newValue) => {
+      invalidName.value = newValue.trim() === ''
+    })
+    watch(clientLobbyCode, (newValue) => {
+      clientLobbyCode.value = newValue.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) // Constrain lobby code to [A-Z0-9], 4 characters
+      invalidLobbyCode.value = clientLobbyCode.value.length != 4 //4 character max
+    })
+
+    // Websocket stuff?
     if (!websocketState || !sendMessage) {
-      throw new Error('WebSocket state or sendMessage function not provided');
+      throw new Error('WebSocket state or sendMessage function not provided')
     }
-
-    const userName = ref<string>('');
-    const requestedLobbyCode = ref<string>('');
-
     if (websocketState.lobbyCode == 'failed') {
-      joinLobbyFailureMessage.value = websocketState.err;
+      joinLobbyFailureMessage.value = websocketState.err
     }
     const lobbyCode = computed(() => websocketState.lobbyCode)
     const serverError = computed(() => websocketState.err)
 
-    function onClickJoinLobby() {
-      if (!websocketState.isConnected) {
-        const join_fail_msg: string = "WebSocket is not connected.";
-        console.error(join_fail_msg);
-        joinLobbyFailureMessage.value = join_fail_msg;
-        
-        return;
+    function validateAction(action: 'join' | 'host'): string | undefined {
+      let errorMessage = undefined
+      if (!websocketState.isConnected) { // Validate websocket connection
+        errorMessage = 'Can\'t ${action}, WebSocket is sus!'
+      } 
+      else if (invalidName == true) { // Validate name
+        errorMessage = 'Can\'t ${action}, name is sus!'
       }
-
-      if (userName.value == '') {
-        joinLobbyFailureMessage.value = "Please enter a name!";
-        invalidName.value = true;
-        return;
+      else if (invalidLobbyCode == true && action == 'join') { // Validate lobby code if joining
+        errorMessage = 'Can\'t ${action}, lobby code is sus!'
       }
+      return errorMessage
+    }
 
-      if (requestedLobbyCode.value.length != 4) {
-        joinLobbyFailureMessage.value = "Please enter a 4 digit lobby code!";
-        invalidLobbyCode.value = true;
-        return;
+    function onClickJoinLobby(): void {
+      const errorMessage = validateAction('join')
+      if (errorMessage !== undefined) { 
+        console.error(errorMessage)
+        return 
       }
 
       const msg = {
         type: 'join_request',
-        user_name: userName.value,
-        lobby_code: requestedLobbyCode.value,
-        date: Date.now(),
-      };
-      console.log(`Trying to join lobby ${msg.lobby_code}`);
-      sendMessage(JSON.stringify(msg));
+        user_name: userName.value.trim(), // Trim whitespace
+        lobby_code: clientLobbyCode.value,
+        date: Date.now()
+      }
+      console.log(clientLobbyCode.value)
+      sendMessage(JSON.stringify(msg))
     }
 
-    function onClickHost() {
-      if (!websocketState.isConnected) {
-        const join_fail_msg: string = "WebSocket is not connected.";
-        console.error(join_fail_msg);
-        hostLobbyFailureMessage.value = join_fail_msg;
-        
-        return;
-      }
-
-      if (userName.value == '') {
-        hostLobbyFailureMessage.value = "Please enter a name!";
-        invalidName.value = true;
-        return;
+    function onClickHostLobby(): void {
+      const errorMessage = validateAction('host')
+      if (errorMessage !== undefined) { 
+        console.error(errorMessage)
+        return 
       }
 
       const msg = {
         type: 'host_request',
-        hoster_name: userName.value,
-        date: Date.now(),
-      };
-      console.log(`Sent my name to the server :3`);
+        hoster_name: userName.value.trim(), // Trim whitespace
+        date: Date.now()
+      }
       sendMessage(JSON.stringify(msg));
-    }
+    }  
 
+    // Track or persist these variables or something
     return {
       userName,
-      requestedLobbyCode,
-      lobbyCode,
-      onClickJoinLobby,
-      onClickHost,
+      clientLobbyCode,
       invalidName,
       invalidLobbyCode,
+      lobbyCode,
+      onClickJoinLobby,
+      onClickHostLobby,
       hostLobbyFailureMessage,
       joinLobbyFailureMessage,
       serverError,
-    };
-  },
-});
+    }
+  }
+})
+
 </script>
 <style scoped>
 .logo {
