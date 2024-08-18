@@ -167,4 +167,19 @@ export class User {
         this.lobby_code = lobby_code;
     }
 
+    send_message(message: any, socket_map: Map<string, WebSocket> ) {
+        const socket = socket_map.get(this.id);
+        if (socket) {
+            socket.send(message);
+        }
+    }
+
+    send_failed_lobby_join_message(bad_code: string, socket_map: Map<string, WebSocket>) {
+        const failed_Join_lobby_msg = {
+            type: 'failed_join_lobby',
+            error_message: `Couldn't find a lobby with message ${bad_code}.`
+        }
+
+        this.send_message(JSON.stringify(failed_Join_lobby_msg), socket_map);
+    }
 }

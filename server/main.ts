@@ -60,6 +60,7 @@ Deno.serve({
             
             if (!requested_lobby) {
               console.log(`couldn't find lobby with id ${message_obj.lobby_code}`);
+              user.send_failed_lobby_join_message(message_obj.lobby_code, user_sockets);
               return;
             }
 

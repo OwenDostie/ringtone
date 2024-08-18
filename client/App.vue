@@ -10,11 +10,11 @@
 
 <script lang="ts">
 import { defineComponent, provide } from 'vue';
-import { setupWebsocket, sendMessage } from './appLogic.ts';
+import { setupWebsocket } from './appLogic.ts';
 
 export default defineComponent({
   setup() {
-    const { state } = setupWebsocket();
+    const { state, sendMessage } = setupWebsocket();
 
     // Provide WebSocket state and actions globally
     provide('websocketState', state);

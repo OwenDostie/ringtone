@@ -1,7 +1,7 @@
 <template>
   <h2>GamePage</h2>
   <div id="lobbyInfo">
-    <h2>connected to lobby with code:{{ computedLobbyCode }} </h2>
+    <h2>connected to lobby with code: {{ lobbyCode }} </h2>
     <br>
     <h3>lobby member list</h3><br>
       <ul>
@@ -11,26 +11,23 @@
 </template>
 
 <script lang="ts">
-  import { defineComponent, inject, computed } from 'vue';
+  import { defineComponent, inject, ref } from 'vue';
   import { WebSocketState } from '../appLogic';
 
   export default defineComponent({
   name: 'GamePage',
   setup() {
     const websocketState = inject<WebSocketState>('websocketState');
-    const sendMessage = inject<(message: Record<string, any>) => void>('sendMessage');
 
-    if (!websocketState || !sendMessage) {
-      throw new Error('WebSocket state or sendMessage function not provided');
+    if (!websocketState) {
+      throw new Error('WebSocket state function not provided');
     }
     console.log('lobbyMembers:', websocketState.lobbyMembers);
     console.log('lobbyCode:', websocketState.lobbyCode);
 
-    const computedLobbyCode = computed(() => websocketState.lobbyCode);
-
     return {
       lobbyMembers: websocketState.lobbyMembers,
-      computedLobbyCode
+      lobbyCode: websocketState.lobbyCode,
     };
   }
 
