@@ -39,7 +39,7 @@ export default {
   },
   methods: {
     formatMessage(message: ChatMessage) {
-      const time = message.timestamp.toLocaleTimeString('en-US', { hour12: false });
+      const time: string = moment(message.timestamp, 'MMMM Do YYYY, h:mm:ss a').format('h:mm:ss a');
       return `${message.sender} (${time}): ${message.content}`;
     },
     sendChat() {
@@ -70,7 +70,7 @@ export default {
         const chatMessage: ChatMessage = {
           sender: data.message.sender,
           content: data.message.content,
-          timestamp: new Date(data.message.timestamp),
+          timestamp: data.message.timestamp,
         };
 
         this.messages.push(chatMessage);

@@ -4,7 +4,7 @@ import { ServerGame } from "./game_types.ts";
 export interface ChatMessage {
     sender: string
     content: string
-    timestamp: Date
+    timestamp: string 
 }
 
 export interface Chat {

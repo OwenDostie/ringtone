@@ -3,6 +3,8 @@ import { fromFileUrl } from "https://deno.land/std/path/mod.ts";
 import { join, extname } from "https://deno.land/std/path/mod.ts";
 import { serve } from "https://deno.land/std@0.167.0/http/server.ts";
 import { mimeTypes } from "https://deno.land/std@0.167.0/media_types/mod.ts";
+import { ChatMessage } from "../shared/lobby_types.ts";
+import moment from "npm:moment";
 
 const mimeTypes: Record<string, string> = {
   ".html": "text/html",
@@ -95,7 +97,7 @@ serve(async (request) => {
 
     socket.onmessage = (event) => {
       console.log(`RECEIVED: ${event.data}`);
-      const message_obj = JSON.parse(event.data);
+      let message_obj = JSON.parse(event.data);
 
       console.log("got a message from the client", message_obj);
 
@@ -107,10 +109,15 @@ serve(async (request) => {
             console.log(`couldn't find lobby with id ${message_obj.lobby_code}`);
             return;
           }
-          message_obj.sender = user.name;
-          message_obj.timestamp = Date.now().toString(); //override this for now
+          const chat_message: ChatMessage = {
+            sender: message_obj.message.sender,
+            content: message_obj.message.content,
+            timestamp: message_obj.message.timestamp,
+          };
+          chat_message.sender = user.name;
+          chat_message.timestamp = moment().format('MMMM Do YYYY, h:mm:ss a'); //override this for now
 
-          lobby.broadcast_chat_message(message_obj.message, user_sockets)
+          lobby.broadcast_chat_message(chat_message, user_sockets)
           break;
         }
         case 'host_request': {
