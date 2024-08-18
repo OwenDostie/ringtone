@@ -1,31 +1,35 @@
 <template>
-  <h2>GamePage</h2>
+  <h2>GAME TIME</h2>
+  <div> 
+    <Timer :running="turnRunning"/>
+  </div>
   <div id="lobbyInfo">
     <h2>connected to lobby with code: {{ lobbyCode }} </h2>
-    <br>
     <h3>lobby member list</h3><br>
-      <ul>
-        <li v-for="member in lobbyMembers" :key="member">{{ member }}</li>
-      </ul>
+      <li v-for="member in lobbyMembers" :key="member">{{ member }}</li>
   </div>
   <div>
     <input type="file" @change="handleFileUpload" />
     <button @click="uploadFile">Upload File</button>
     <p v-if="uploadMessage">{{ uploadMessage }}</p>
   </div>
-
 </template>
 
 <script lang="ts">
   import { defineComponent, inject, ref } from 'vue';
   import { WebSocketState } from '../appLogic';
+  import Timer from './Timer.vue'
 
   export default defineComponent({
   name: 'GamePage',
+  components: {
+    Timer
+  },
   data() {
     return {
       selectedFile: null,
       uploadMessage: '',
+      turnRunning: true,
     };
   },
   methods: {
