@@ -101,11 +101,24 @@ serve(async (request) => {
 
       // Big switch case for handling different types of messages from the client
       switch(message_obj.type) {
+        case 'chat_message': {
+          const lobby = lobby_list.get_lobby_with_code(user.lobby_code);
+          if (!lobby) {
+            console.log(`couldn't find lobby with id ${message_obj.lobby_code}`);
+            return;
+          }
+          message_obj.sender = user.name;
+          message_obj.timestamp = Date.now().toString(); //override this for now
+
+          lobby.broadcast_chat_message(message_obj.message, user_sockets)
+          break;
+        }
         case 'host_request': {
 
           user.set_name(message_obj.hoster_name);
-          const new_lobby = lobby_list.add_lobby(user);;
+          const new_lobby = lobby_list.add_lobby(user);
 
+          user.set_lobby_code(new_lobby.code);
           new_lobby.broadcast_lobby_update(user_sockets);
           break;
 
@@ -120,6 +133,7 @@ serve(async (request) => {
           }
 
           user.set_name(message_obj.user_name);
+          user.set_lobby_code(message_obj.lobby_code);
           lobby_list.add_user_to_lobby(user, message_obj.lobby_code);
           
           requested_lobby.broadcast_lobby_update(user_sockets);

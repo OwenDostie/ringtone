@@ -13,20 +13,29 @@
     <button @click="uploadFile">Upload File</button>
     <p v-if="uploadMessage">{{ uploadMessage }}</p>
   </div>
+  <Chat />
 </template>
 
 <script lang="ts">
   import { defineComponent, inject, ref } from 'vue';
   import { WebSocketState } from '../websocket';
   import Timer from './Timer.vue'
+  import Chat from './Chat.vue'
+
+  const sendMessage = inject<(message: string) => void>('sendMessage');
 
   export default defineComponent({
+  inject: ['websocketState'], // Inject the websocketState
   name: 'GamePage',
   components: {
-    Timer
+    Timer,
+    Chat
   },
   props: {
-    isHost: boolean,
+    isHost: {
+      type: Boolean,
+      default: false,
+    }
   },
   data() {
     return {

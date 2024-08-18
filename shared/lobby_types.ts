@@ -1,8 +1,15 @@
 import * as uuid from "jsr:@std/uuid";
 
-import {Game} from './game_types.ts'
 
-export interface LobbyListInterface
+export interface ChatMessage {
+    sender: string
+    content: string
+    timestamp: Date
+}
+
+export interface Chat {
+    messages: ChatMessage[],
+}
 
 export class LobbyList {
     lobby_list: Lobby[];
@@ -45,7 +52,6 @@ export class LobbyList {
                 lobby.add_user(user);
                 console.log(`added user ${user.name} to lobby with code ${lobby.code}`);
                 success = true;
-                user.set_lobby_code(lobby.code)
             }
         })
         if (!success) {
@@ -110,6 +116,22 @@ export class Lobby {
             if (socket) {
                 console.log(`found a socket for user ${user.name}`);
                 socket.send(message);
+            }
+        })
+
+    }
+    
+    broadcast_chat_message(message: ChatMessage, socket_map: Map<string, WebSocket> ) {
+        const msg = {
+            type: 'chat_update',
+            message: message,
+            
+        }
+        this.user_list.forEach(user => {
+            const socket = socket_map.get(user.id);
+            if (socket) {
+                console.log(`broadcasting chat msg ${message.content}`);
+                socket.send(JSON.stringify(msg));
             }
         })
 
