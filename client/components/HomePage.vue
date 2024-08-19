@@ -32,8 +32,8 @@ export default defineComponent({
     const sendMessage = inject<(message: string) => void>('sendMessage')
     const userName = ref<string>('')
     const clientLobbyCode = ref<string>('')
-    const invalidName = ref<boolean>(false)
-    const invalidLobbyCode = ref<boolean>(false)
+    const invalidName = ref<boolean>(true)
+    const invalidLobbyCode = ref<boolean>(true)
     const hostLobbyFailureMessage = ref('')
     const joinLobbyFailureMessage = ref('')
 
@@ -57,14 +57,14 @@ export default defineComponent({
     const serverError = computed(() => websocketState.err)
 
     function validateAction(action: 'join' | 'host'): string | undefined {
-      let errorMessage: string | undefined = undefined;
-      if (!websocketState || !websocketState.isConnected) {
+      let errorMessage = undefined
+      if (!websocketState.isConnected) { // Validate websocket connection
         errorMessage = 'Can\'t ${action}, WebSocket is sus!'
       } 
-      else if (invalidName.value == true) {
+      else if (invalidName == true) { // Validate name
         errorMessage = 'Can\'t ${action}, name is sus!'
       }
-      else if (invalidLobbyCode.value == true && action == 'join') {
+      else if (invalidLobbyCode == true && action == 'join') { // Validate lobby code if joining
         errorMessage = 'Can\'t ${action}, lobby code is sus!'
       }
       return errorMessage
@@ -104,7 +104,6 @@ export default defineComponent({
 
     // Track or persist these variables or something
     return {
-      sendMessage,
       userName,
       clientLobbyCode,
       invalidName,
