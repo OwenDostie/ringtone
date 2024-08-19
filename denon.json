@@ -1,0 +1,20 @@
+{
+    "scripts": {
+      "frontend": {
+        "cmd": "deno run -A --node-modules-dir npm:vite",
+        "desc": "Run Vite frontend server",
+        "watch": ["frontend"],
+        "exts": ["ts", "js", "vue", "html", "css"]
+      },
+      "backend": {
+        "cmd": "deno run -A --node-modules-dir server/main.ts",
+        "desc": "Run backend with hot reload",
+        "watch": ["server"],
+        "exts": ["ts", "js", "json"]
+      },
+      "dev": {
+        "cmd": "denon run --config denon.json backend & denon run --config denon.json frontend",
+        "desc": "Run both frontend and backend servers with hot reload"
+      }
+    }
+  }

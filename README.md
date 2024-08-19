@@ -1,5 +1,10 @@
 # ringtone
 
+## get dependencies
+install deno
+
+install denon for hot reloading
+`deno install -qAf --unstable https://deno.land/x/denon/denon.ts`
 ## How to run the server
 ```
 deno task start
