@@ -21,6 +21,9 @@
               {{ member }}
             </li>
           </ul>
+          <audio id="audio" controls>
+            Your browser does not support the audio element.
+          </audio>
         </div>
 
         <div class="userActions">

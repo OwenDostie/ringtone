@@ -27,7 +27,6 @@ import { WebSocketState } from '../websocket' // Adjust the import path as neede
 export default defineComponent({
   name: 'HomePage',
   setup() {
-    const router = useRouter(); // Access the router instance
     const websocketState = inject<WebSocketState>('websocketState')
     const sendMessage = inject<(message: string) => void>('sendMessage')
     const userName = ref<string>('')
@@ -57,7 +56,7 @@ export default defineComponent({
     const serverError = computed(() => websocketState.err)
 
     function validateAction(action: 'join' | 'host'): string | undefined {
-      let errorMessage = undefined
+      let errorMessage: string | undefined = undefined
       if (!websocketState.isConnected) { // Validate websocket connection
         errorMessage = 'Can\'t ${action}, WebSocket is sus!'
       } 

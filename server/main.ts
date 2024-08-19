@@ -26,8 +26,6 @@ const uploadDir = './uploads'; // Directory where files will be uploaded
 let lobby_list: LobbyList = new LobbyList();
 let user_sockets = new Map<string, WebSocket>();
 
-console.log("fuck");
-
 await Deno.mkdir(uploadDir, { recursive: true }).catch((error) => {
   if (error instanceof Deno.errors.AlreadyExists) {
     console.log("Upload directory already exists");
@@ -38,7 +36,7 @@ await Deno.mkdir(uploadDir, { recursive: true }).catch((error) => {
 
 serve(async (request) => {
   const url = new URL(request.url); 
-  const pathname = url.pathname;     
+  const pathname = url.pathname;
   if (request.method === "POST" && pathname === "/upload") {
     console.log("got a file");
     // Handle file upload
