@@ -18,7 +18,7 @@ const mimeTypes: Record<string, string> = {
   ".ico": "image/x-icon",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
-};
+}
 
 const staticDir = fromFileUrl(new URL("../dist/", import.meta.url))
 const uploadDir = './uploads'; // Directory where files will be uploaded
@@ -32,7 +32,7 @@ await Deno.mkdir(uploadDir, { recursive: true }).catch((error) => {
   } else {
     throw error
   }
-});
+})
 
 serve(async (request) => {
   const url = new URL(request.url)
@@ -51,7 +51,7 @@ serve(async (request) => {
       return new Response("File uploaded successfully", { status: 200 })
     }
 
-    return new Response("No file uploaded", { status: 400 });
+    return new Response("No file uploaded", { status: 400 })
   }
   else if (request.method === "GET" && pathname.startsWith("/uploads/")) {
     // Serve the audio file from the uploads directory
@@ -102,9 +102,9 @@ serve(async (request) => {
       // Big switch case for handling different types of messages from the client
       switch(message_obj.type) {
         case 'chat_message': {
-          const lobby = lobby_list.get_lobby_with_code(user.lobby_code);
+          const lobby = lobby_list.get_lobby_with_code(user.lobby_code)
           if (!lobby) {
-            console.log(`couldn't find lobby with id ${message_obj.lobby_code}`);
+            console.log(`couldn't find lobby with id ${message_obj.lobby_code}`)
             return
           }
           const chat_message: ChatMessage = {
@@ -113,10 +113,10 @@ serve(async (request) => {
             timestamp: message_obj.message.timestamp,
           }
           chat_message.sender = user.name;
-          chat_message.timestamp = moment().format('MMMM Do YYYY, h:mm:ss a'); //override this for now
+          chat_message.timestamp = moment().format('MMMM Do YYYY, h:mm:ss a') //override this for now
 
           lobby.broadcast_chat_message(chat_message, user_sockets)
-          break;
+          break
         }
         case 'host_request': {
 
@@ -125,7 +125,7 @@ serve(async (request) => {
 
           user.set_lobby_code(new_lobby.code)
           new_lobby.broadcast_lobby_update(user_sockets)
-          break;
+          break
 
         }
         case 'join_request': {
@@ -134,7 +134,7 @@ serve(async (request) => {
           if (!requested_lobby) {
             console.log(`couldn't find lobby with id ${message_obj.lobby_code}`)
             user.send_failed_lobby_join_message(message_obj.lobby_code, user_sockets)
-            return;
+            return
           }
 
           user.set_name(message_obj.user_name)
@@ -160,7 +160,7 @@ serve(async (request) => {
 
         }
       }
-    };
+    }
 
     socket.onclose = () => {
       lobby_list.remove_user_from_lobby(user, user.lobby_code)
@@ -185,7 +185,7 @@ serve(async (request) => {
         headers: {
           "content-type": contentType,
         },
-      });
+      })
     } catch (error) {
       console.error("Error serving file:", error)
       if (error instanceof Deno.errors.NotFound) {
