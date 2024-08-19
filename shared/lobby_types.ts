@@ -61,15 +61,23 @@ export class LobbyList {
 
     remove_user_from_lobby(user: User, lobby_code: string) {
         let success = false;
-        this.lobby_list.forEach((lobby) => {
-            if (lobby.code == lobby_code) {
+    
+        // Use the filter method to remove the empty lobby after user removal
+        this.lobby_list = this.lobby_list.filter((lobby) => {
+            if (lobby.code === lobby_code) {
                 lobby.remove_user(user);
                 console.log(`removed user ${user.name} from lobby with code ${lobby.code}`);
                 success = true;
+    
+                // Return false to remove the lobby from the list if it becomes empty
+                return lobby.user_list.length > 0;
             }
-        })
+            // Return true to keep the lobby in the list
+            return true;
+        });
+    
         if (!success) {
-            console.log(`when removing, culd not find lobby with code ${lobby_code}`);
+            console.log(`when removing, could not find lobby with code ${lobby_code}`);
         }
     }
 
@@ -112,7 +120,7 @@ export class Lobby {
         this.user_list.filter(user => user.id !== user_to_remove.id);
     }
 
-    broadcast(message: any, socket_map: Map<string, WebSocket> ) {
+    broadcast(message: any, socket_map: Map<string, WebSocket | null> ) {
         this.user_list.forEach(user => {
             const socket = socket_map.get(user.id);
             if (socket) {
@@ -122,7 +130,7 @@ export class Lobby {
         })
     }
     
-    broadcast_game_start(socket_map: Map<string, WebSocket> ) {
+    broadcast_game_start(socket_map: Map<string, WebSocket | null> ) {
         const game_start_message = {
             type: 'game_start',
         }
@@ -131,7 +139,7 @@ export class Lobby {
 
     }
     
-    broadcast_chat_message(message: ChatMessage, socket_map: Map<string, WebSocket> ) {
+    broadcast_chat_message(message: ChatMessage, socket_map: Map<string, WebSocket | null> ) {
         const msg = {
             type: 'chat_update',
             message: message,
@@ -160,7 +168,7 @@ export class Lobby {
         return JSON.stringify(lobby_update_message);
     }
 
-    broadcast_lobby_update(socket_map: Map<string, WebSocket>) {
+    broadcast_lobby_update(socket_map: Map<string, WebSocket | null>) {
         this.user_list.forEach(user => {
             const socket = socket_map.get(user.id);
             if (socket) {
@@ -209,14 +217,14 @@ export class User {
         this.lobby_code = lobby_code;
     }
 
-    send_message(message: any, socket_map: Map<string, WebSocket> ) {
+    send_message(message: any, socket_map: Map<string, WebSocket | null> ) {
         const socket = socket_map.get(this.id);
         if (socket) {
             socket.send(message);
         }
     }
 
-    send_failed_lobby_join_message(bad_code: string, socket_map: Map<string, WebSocket>) {
+    send_failed_lobby_join_message(bad_code: string, socket_map: Map<string, WebSocket | null>) {
         const failed_Join_lobby_msg = {
             type: 'failed_join_lobby',
             error_message: `Couldn't find a lobby with message ${bad_code}.`

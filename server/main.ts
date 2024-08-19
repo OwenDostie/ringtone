@@ -1,4 +1,6 @@
 import { User, Lobby, LobbyList } from "../shared/lobby_types.ts"
+import { setCookie, getCookies } from "https://deno.land/std/http/cookie.ts";
+import * as uuid from "jsr:@std/uuid";
 import { fromFileUrl } from "https://deno.land/std/path/mod.ts"
 import { join, extname } from "https://deno.land/std/path/mod.ts"
 import { serve } from "https://deno.land/std@0.167.0/http/server.ts"
@@ -24,7 +26,8 @@ const staticDir = fromFileUrl(new URL("../dist/", import.meta.url))
 const uploadDir = './uploads'; // Directory where files will be uploaded
 
 let lobby_list: LobbyList = new LobbyList();
-let user_sockets = new Map<string, WebSocket>();
+let user_sockets = new Map<string, WebSocket | null>();
+let user_session_ids = new Map<string, User>();
 
 await Deno.mkdir(uploadDir, { recursive: true }).catch((error) => {
   if (error instanceof Deno.errors.AlreadyExists) {
@@ -37,6 +40,41 @@ await Deno.mkdir(uploadDir, { recursive: true }).catch((error) => {
 serve(async (request) => {
   const url = new URL(request.url)
   const pathname = url.pathname   
+
+  const cookies = getCookies(request.headers)
+
+  let sessionId = cookies.sessionId
+  let user: User
+
+  if (!sessionId) {
+    sessionId = uuid.v1.generate();
+
+    user = new User();
+    user.id = sessionId;
+
+    user_sockets.set(user.id, null); 
+    user_session_ids.set(user.id, user);
+
+    const headers = new Headers();
+    setCookie(headers, {
+      name: "sessionId",
+      value: sessionId,
+      httpOnly: true,
+      secure: true, // Make sure you are using HTTPS
+      sameSite: "None", // Required for cross-site cookies
+    });
+    return new Response(null, { status: 200, headers });
+  } else {
+
+    if (!user_session_ids.has(sessionId)) {
+      user = new User();
+      user.id = sessionId;
+      user_sockets.set(user.id, null);
+    } else {
+      user = user_session_ids.get(sessionId);
+    }
+  }
+
   if (request.method === "POST" && pathname === "/upload") {
     console.log("got a file")
     // Handle file upload
@@ -47,7 +85,7 @@ serve(async (request) => {
       console.log("file valid")
       const arrayBuffer = await file.arrayBuffer()
       const uint8Array = new Uint8Array(arrayBuffer)
-      await Deno.writeFile(`./uploads/${file.name}`, uint8Array)
+      await Deno.writeFile(`${uploadDir}/${lobby_folder}/${file.name}`, uint8Array)
       return new Response("File uploaded successfully", { status: 200 })
     }
 
@@ -86,7 +124,8 @@ serve(async (request) => {
   else if (request.headers.get("upgrade") === "websocket") {
     const { socket, response } = Deno.upgradeWebSocket(request)
 
-    let user = new User();
+    const cookies = getCookies(request.headers);
+    const sessionId = cookies.sessionId;
 
     socket.onopen = () => {
       console.log("CONNECTED")
@@ -171,15 +210,24 @@ serve(async (request) => {
 
     return response
   } else {
-    try {
-      // Extract the pathname from the request URL
-      const url = new URL(request.url, `http://${request.headers.get("host")}`)
-      const urlPath = url.pathname === "/" ? "/index.html" : url.pathname
-      const filePath = join(staticDir, urlPath)
-      const fileExt = extname(filePath)
-      const contentType = mimeTypes[fileExt] || "application/octet-stream"
+    // Extract the pathname from the request URL
+    const url = new URL(request.url, `http://${request.headers.get("host")}`)
+    let pathname = url.pathname;
+
+    // If the request is for the root path, serve index.html
+    if (pathname === "/") {
+      pathname = "/index.html";
+    }
   
-      const file = await Deno.readFile(filePath)
+    // Construct the file path
+    const filePath = join(staticDir, pathname);
+  
+    try {
+      // Try to read the requested file
+      const file = await Deno.readFile(filePath);
+      const fileExt = extname(filePath);
+      const contentType = mimeTypes[fileExt] || "application/octet-stream";
+  
       return new Response(file, {
         status: 200,
         headers: {
@@ -187,11 +235,23 @@ serve(async (request) => {
         },
       });
     } catch (error) {
-      console.error("Error serving file:", error)
       if (error instanceof Deno.errors.NotFound) {
-        return new Response("404 Not Found", { status: 404 })
+        try {
+          // If the file is not found, serve index.html
+          const indexFile = await Deno.readFile(join(staticDir, "index.html"));
+          return new Response(indexFile, {
+            status: 200,
+            headers: {
+              "content-type": "text/html",
+            },
+          });
+        } catch (indexError) {
+          console.error("Error serving index.html:", indexError);
+          return new Response("500 Internal Server Error", { status: 500 });
+        }
       } else {
-        return new Response("500 Internal Server Error", { status: 500 })
+        console.error("Error serving file:", error);
+        return new Response("500 Internal Server Error", { status: 500 });
       }
     }
   }
