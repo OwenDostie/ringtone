@@ -21,9 +21,12 @@
               {{ member }}
             </li>
           </ul>
-          <audio id="audio" controls>
-            Your browser does not support the audio element.
-          </audio>
+          <div v-if="audioFiles.length > 0">
+            <div v-for="file in audioFiles" :key="file" class="audio-file">
+              <label>{{ file.split('/').pop() }}</label>
+              <audio :src="file" controls></audio>
+            </div>
+          </div>
         </div>
 
         <div class="userActions">
@@ -62,6 +65,7 @@
       uploadMessage: '',
       turnRunning: false,
       isHost: false,
+      audioFiles: [],
     };
   },
   methods: {
@@ -103,6 +107,22 @@
     stopTimer(){
       this.turnRunning = false;
     },
+    displayAudioFiles(files: string[]) {
+      const container = document.getElementById('audio-files-container');
+      container!.innerHTML = ''; // Clear the container first
+
+      files.forEach((fileUrl) => {
+        const audioElement = document.createElement('audio');
+        audioElement.controls = true;
+        audioElement.src = fileUrl;
+
+        const fileLabel = document.createElement('label');
+        fileLabel.textContent = fileUrl.split('/').pop(); // Display just the file name
+
+        container!.appendChild(fileLabel);
+        container!.appendChild(audioElement);
+      });
+    },
   },
   setup() {
     const websocketState = inject<WebSocketState>('websocketState');
@@ -128,6 +148,14 @@
     };
   },
   mounted() {
+    const socket = this.websocketState.socket;
+    socket.addEventListener('message', (event: MessageEvent) => {
+      const messageObj = JSON.parse(event.data);
+
+      if (messageObj.type === 'audio_files') {
+        this.audioFiles = messageObj.files;  // Update the audioFiles array
+      }
+    });
   }
       
 

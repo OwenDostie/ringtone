@@ -20,6 +20,8 @@ const mimeTypes: Record<string, string> = {
   ".ico": "image/x-icon",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
+  ".wav": "audio/wav", 
+  ".mp3": "audio/mpeg",
 }
 
 const staticDir = fromFileUrl(new URL("../dist/", import.meta.url))
@@ -29,13 +31,15 @@ let lobby_list: LobbyList = new LobbyList();
 let user_sockets = new Map<string, WebSocket | null>();
 let user_session_ids = new Map<string, User>();
 
-await Deno.mkdir(uploadDir, { recursive: true }).catch((error) => {
-  if (error instanceof Deno.errors.AlreadyExists) {
-    console.log("Upload directory already exists")
-  } else {
-    throw error
-  }
-})
+export async function mkdir_if_ne(directory: string) {
+  await Deno.mkdir(directory, { recursive: true }).catch((error) => {
+    if (error instanceof Deno.errors.AlreadyExists) {
+      console.log("Upload directory already exists")
+    } else {
+      throw error
+    }
+  })
+}
 
 // Example of setting the cookie with additional data
 function setSessionCookie(headers: Headers, sessionId: string, lobbyId?: string, username?: string) {
@@ -75,6 +79,7 @@ serve(async (request) => {
   const cookies = getCookies(request.headers)
 
   let sessionId = cookies.sessionId
+  console.log("session id is " + sessionId)
   let user: User
 
   if (!sessionId) {
@@ -95,8 +100,10 @@ serve(async (request) => {
       user = new User();
       user.id = sessionId;
       user_sockets.set(user.id, null);
+      user_session_ids.set(user.id, user);
     } else {
       user = user_session_ids.get(sessionId);
+      console.log(`user ${user.name} exists!`)
     }
   }
 
@@ -108,17 +115,20 @@ serve(async (request) => {
 
     if (file) {
       console.log("file valid")
-      const arrayBuffer = await file.arrayBuffer()
-      const uint8Array = new Uint8Array(arrayBuffer)
-      await Deno.writeFile(`${uploadDir}/${lobby_folder}/${file.name}`, uint8Array)
+      console.log(`use ${sessionId} lobby code is ${user?.lobby_code}`)
+      const lobby = lobby_list.get_lobby_with_code(user.lobby_code)
+      lobby?.submit_file(user, file, user_sockets)
       return new Response("File uploaded successfully", { status: 200 })
     }
 
     return new Response("No file uploaded", { status: 400 })
   }
+
   else if (request.method === "GET" && pathname.startsWith("/uploads/")) {
     // Serve the audio file from the uploads directory
     const filePath = `.${pathname}`
+    const currentWorkingDirectory = Deno.cwd();
+    console.log("Current Working Directory:", currentWorkingDirectory);
     try {
       const file = await Deno.open(filePath, {read: true})
       const fileExt = extname(filePath)
@@ -149,8 +159,25 @@ serve(async (request) => {
   else if (request.headers.get("upgrade") === "websocket") {
     const { socket, response } = Deno.upgradeWebSocket(request)
 
-    const cookies = getCookies(request.headers);
-    const sessionId = cookies.sessionId;
+    //const cookies = getCookies(request.headers);
+        
+    //const url = new URL(request.url);
+    //const sessionId = url.searchParams.get("sessionId");
+    const cookies = getCookies(request.headers)
+    let sessionId = cookies.sessionId
+
+    console.log("establishing ws connection with sesison id " + sessionId)
+
+    let user: User
+    if (!user_session_ids.has(sessionId)) {
+      user = new User();
+      user.id = sessionId;
+      user_sockets.set(user.id, null);
+      user_session_ids.set(user.id, user);
+    } else {
+      user = user_session_ids.get(sessionId);
+      console.log(`user ${user.name} exists!`)
+    }
 
     socket.onopen = () => {
       console.log("CONNECTED")
@@ -188,6 +215,9 @@ serve(async (request) => {
           const new_lobby = lobby_list.add_lobby(user)
 
           user.set_lobby_code(new_lobby.code)
+          user_session_ids.set(user.id, user);
+          const test_user = user_session_ids.get(sessionId);
+          console.log(`user ${user.name} with ${sessionId}, ${user.id} lobby code is ${test_user?.lobby_code}`)
           new_lobby.broadcast_lobby_update(user_sockets)
           break
 
@@ -201,6 +231,9 @@ serve(async (request) => {
           } else {
             user.set_name(message_obj.user_name)
             user.set_lobby_code(message_obj.lobby_code)
+            user_session_ids.set(user.id, user);
+            const test_user = user_session_ids.get(sessionId);
+          console.log(`user ${user.name} with ${sessionId}, ${user.id} lobby code is ${test_user?.lobby_code}`)
             lobby_list.add_user_to_lobby(user, message_obj.lobby_code)
             
             requested_lobby.broadcast_lobby_update(user_sockets)

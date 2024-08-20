@@ -44,7 +44,7 @@ function getSessionData() {
 
 function connectWebsocket() {
     const wsUri = "ws://127.0.0.1/";
-    const router = useRouter(); // Access the router instance
+    const router = useRouter();
     const route = useRoute();
 
     if (state.socket) {
@@ -52,19 +52,18 @@ function connectWebsocket() {
         return;
     }
 
-    const socket = new WebSocket(wsUri);
+    const sessionData = getSessionData();
+    const sessionId = sessionData.sessionId;
+    console.log("tryna establisdh ws connection with sessin id " + sessionId)
+    const socket = new WebSocket(`ws://localhost:80/socket?sessionId=${sessionId}`);
+
     socket.onopen = (e) => {
       console.log("CONNECTED");
       state.isConnected = true;
-      
-      // Retrieve session data
-      const sessionData = getSessionData();
-
 
       const isOnGameRoute = route.path === '/game';
 
       if (isOnGameRoute && sessionData.lobbyId && sessionData.username) {
-          // Send a rejoin request using the stored lobbyId and username
           sendMessage(JSON.stringify({
               type: 'join_request',
               lobby_code: sessionData.lobbyId,
@@ -82,7 +81,7 @@ function connectWebsocket() {
 
       const message_obj = JSON.parse(e.data);
 
-      // big switch case for handling mesasges from the server
+      // big switch case for handling ws mesasges from the server
       switch(message_obj.type) {
           case 'lobby_update': {
               console.log(`got a message for lobby update, lobby ocde ${message_obj.code}`)

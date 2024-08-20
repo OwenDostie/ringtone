@@ -109,6 +109,7 @@ export class Lobby {
         this.add_user(host);
         this.code = this.generateLobbyCode();
         this.game = new ServerGame();
+        this.game.set_directory(`./uploads/${this.code}/game/`)
     }
 
     printUsers() {
@@ -143,8 +144,6 @@ export class Lobby {
             type: 'game_start',
         }
         this.broadcast(JSON.stringify(game_start_message), socket_map);
-
-
     }
     
     broadcast_chat_message(message: ChatMessage, socket_map: Map<string, WebSocket | null> ) {
@@ -160,7 +159,6 @@ export class Lobby {
                 socket.send(JSON.stringify(msg));
             }
         })
-
     }
 
     make_lobby_update_message_string(user: User): string {
@@ -205,7 +203,27 @@ export class Lobby {
             console.log("name: " + user.name + "\t id: " + user.id + "\n");
         }
     }
+    async submit_file(user: User, file: File, socket_map: Map<string, WebSocket | null>) {
+        await this.game.submit_file(user, file);
+
+        if (this.game.all_users_submitted(this.user_list)) {
+            console.log("all users have submitted!");
+            this.broadcast_audio_files(socket_map);
+        }
+    }
+
+    async broadcast_audio_files(socket_map: Map<string, WebSocket | null>) {
+        const allFiles = await this.game.getAllFiles();
+        const fileUrls = allFiles.map(file => this.game.directory + file);
+
+        this.broadcast(JSON.stringify({
+        type: 'audio_files',
+        files: fileUrls,
+        }), socket_map);
+    }
 }
+
+
 
 export class User {
     name: string;
@@ -213,8 +231,6 @@ export class User {
     lobby_code: string;
 
     constructor() {
-        this.id = uuid.v1.generate();
-        // Create UUID for connected socket
     }
 
     set_name(name: string) {
