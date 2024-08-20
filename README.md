@@ -52,3 +52,11 @@ deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
 - dark mode stuff
 - cookies
 - docker
+
+## known bugs
+when you joikjn a lobby from the same browser/ new tab, it will show two of the secon'd tabs user 
+lobby explodes if the only person in it refreshes
+open in incognito is a white screen initially
+audio player is working weirdly / not really working on owens' computer 
+home screen inputs shake upon first load
+delete uploads when users disconnect
