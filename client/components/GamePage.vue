@@ -114,17 +114,22 @@
     console.log('lobbyMembers:', websocketState.lobbyMembers);
     console.log('lobbyCode:', websocketState.lobbyCode);
     const isHost = computed(() => websocketState.lobbyHost == websocketState.name)
+    const lobbyMembers = computed(() => websocketState.lobbyMembers)
+    const lobbyCode = computed(() => websocketState.lobbyCode)
 
     const turnRunning = computed(() => websocketState.turnRunning);
 
     return {
-      lobbyMembers: websocketState.lobbyMembers,
-      lobbyCode: websocketState.lobbyCode,
+      lobbyMembers: lobbyMembers,
+      lobbyCode: lobbyCode,
       isHost: isHost,
       turnRunning: turnRunning,
       sendMessage
     };
+  },
+  mounted() {
   }
+      
 
   });
 </script>

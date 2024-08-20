@@ -1,5 +1,5 @@
 
-import { useRouter } from 'vue-router'; // Import the router function
+import { useRouter, useRoute } from 'vue-router'; // Import the router function
 import { ref, reactive, readonly, onMounted, onBeforeUnmount } from 'vue';
 
 export interface WebSocketState {
@@ -26,19 +26,51 @@ export interface WebSocketState {
     err: '',
   });
 
+function getSessionData() {
+  const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
+    const [name, value] = cookie.split('=');
+    acc[name] = decodeURIComponent(value);
+    return acc;
+  }, {});
+
+  console.log("cookies: " + cookies.sessionId + ", " + cookies.lobbyId + ", " + cookies.username);
+
+  return {
+    sessionId: cookies.sessionId || null,
+    lobbyId: cookies.lobbyId || null,
+    username: cookies.username || null,
+  };
+}
+
 function connectWebsocket() {
     const wsUri = "ws://127.0.0.1/";
     const router = useRouter(); // Access the router instance
+    const route = useRoute();
 
     if (state.socket) {
         console.warn('WebSocket already connected.');
         return;
     }
-    const socket = new WebSocket(wsUri);
 
+    const socket = new WebSocket(wsUri);
     socket.onopen = (e) => {
-    console.log("CONNECTED");
-        state.isConnected = true;
+      console.log("CONNECTED");
+      state.isConnected = true;
+      
+      // Retrieve session data
+      const sessionData = getSessionData();
+
+
+      const isOnGameRoute = route.path === '/game';
+
+      if (isOnGameRoute && sessionData.lobbyId && sessionData.username) {
+          // Send a rejoin request using the stored lobbyId and username
+          sendMessage(JSON.stringify({
+              type: 'join_request',
+              lobby_code: sessionData.lobbyId,
+              user_name: sessionData.username,
+          }));
+      }
     };
 
     socket.onclose = (e) => {
@@ -46,38 +78,42 @@ function connectWebsocket() {
     };
 
     socket.onmessage = (e) => {
-    console.log(`RECEIVED: ${e.data}`);
+      console.log(`RECEIVED: ${e.data}`);
 
-    const message_obj = JSON.parse(e.data);
+      const message_obj = JSON.parse(e.data);
 
-        // big switch case for handling mesasges from the server
-        switch(message_obj.type) {
-            case 'lobby_update': {
-                console.log(`got a message for lobby update, lobby ocde ${message_obj.code}`)
-                state.lobbyMembers.length = 0; 
-                state.lobbyMembers.push(...message_obj.members); 
-                state.lobbyCode = ''; 
-                state.lobbyCode = message_obj.code; 
-                state.lobbyHost = ''; 
-                state.lobbyHost = message_obj.host
-                state.name = message_obj.name;
-                router.push('/game'); 
-                break;
-            }
-            case 'failed_join_lobby': {
-                state.lobbyCode = 'failed'
-                state.err = message_obj.error_message
-                break;
-            }
-            case 'game_start': {
-                if (state.turnRunning) {
-                  console.log("this shouldn't happen")
-                  state.turnRunning = false;
-                }
-                console.log("tryan start game");
-                state.turnRunning = true;
-                break;
-            }
+      // big switch case for handling mesasges from the server
+      switch(message_obj.type) {
+          case 'lobby_update': {
+              console.log(`got a message for lobby update, lobby ocde ${message_obj.code}`)
+              state.lobbyMembers.length = 0; 
+              state.lobbyMembers.push(...message_obj.members); 
+              state.lobbyCode = ''; 
+              state.lobbyCode = message_obj.code; 
+              state.lobbyHost = ''; 
+              state.lobbyHost = message_obj.host
+              state.name = message_obj.name;
+
+              document.cookie = `lobbyId=${encodeURIComponent(message_obj.code)}; path=/; SameSite=Strict`;
+              document.cookie = `username=${encodeURIComponent(message_obj.name)}; path=/; SameSite=Strict`;
+
+              router.push('/game'); 
+              break;
+          }
+          case 'failed_join_lobby': {
+              state.lobbyCode = 'failed'
+              state.err = message_obj.error_message
+              break;
+          }
+          case 'game_start': {
+              if (state.turnRunning) {
+                console.log("this shouldn't happen")
+                state.turnRunning = false;
+              }
+              console.log("tryan start game");
+              state.turnRunning = true;
+              break;
+          }
         }
 
     };

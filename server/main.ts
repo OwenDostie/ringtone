@@ -37,6 +37,37 @@ await Deno.mkdir(uploadDir, { recursive: true }).catch((error) => {
   }
 })
 
+// Example of setting the cookie with additional data
+function setSessionCookie(headers: Headers, sessionId: string, lobbyId?: string, username?: string) {
+
+  setCookie(headers, {
+    name: "sessionId",
+    value: sessionId,
+    httpOnly: true,
+    secure: true, 
+    sameSite: "None",
+  });
+
+  if (lobbyId) {
+    setCookie(headers, {
+      name: "lobbyId",
+      value: lobbyId,
+      httpOnly: true,
+      secure: true, 
+      sameSite: "None", 
+    });
+  }
+  if (username)  {
+    setCookie(headers, {
+      name: "username",
+      value: username,
+      httpOnly: true,
+      secure: true,
+      sameSite: "None", 
+    });
+  }
+}
+
 serve(async (request) => {
   const url = new URL(request.url)
   const pathname = url.pathname   
@@ -56,13 +87,7 @@ serve(async (request) => {
     user_session_ids.set(user.id, user);
 
     const headers = new Headers();
-    setCookie(headers, {
-      name: "sessionId",
-      value: sessionId,
-      httpOnly: true,
-      secure: true, // Make sure you are using HTTPS
-      sameSite: "None", // Required for cross-site cookies
-    });
+    setSessionCookie(headers, sessionId)
     return new Response(null, { status: 200, headers });
   } else {
 
@@ -173,14 +198,14 @@ serve(async (request) => {
           if (!requested_lobby) {
             console.log(`couldn't find lobby with id ${message_obj.lobby_code}`)
             user.send_failed_lobby_join_message(message_obj.lobby_code, user_sockets)
-            return
+          } else {
+            user.set_name(message_obj.user_name)
+            user.set_lobby_code(message_obj.lobby_code)
+            lobby_list.add_user_to_lobby(user, message_obj.lobby_code)
+            
+            requested_lobby.broadcast_lobby_update(user_sockets)
           }
 
-          user.set_name(message_obj.user_name)
-          user.set_lobby_code(message_obj.lobby_code)
-          lobby_list.add_user_to_lobby(user, message_obj.lobby_code)
-          
-          requested_lobby.broadcast_lobby_update(user_sockets)
           break
         }
         case 'game_start_request': {

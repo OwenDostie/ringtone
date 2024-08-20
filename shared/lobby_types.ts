@@ -62,18 +62,18 @@ export class LobbyList {
     remove_user_from_lobby(user: User, lobby_code: string) {
         let success = false;
     
-        // Use the filter method to remove the empty lobby after user removal
         this.lobby_list = this.lobby_list.filter((lobby) => {
             if (lobby.code === lobby_code) {
                 lobby.remove_user(user);
                 console.log(`removed user ${user.name} from lobby with code ${lobby.code}`);
                 success = true;
     
-                // Return false to remove the lobby from the list if it becomes empty
-                return lobby.user_list.length > 0;
+                if (lobby.user_list.length === 0) {
+                    console.log(`lobby with code ${lobby.code} is empty and will be removed`);
+                    return false; // Remove the lobby from the list
+                }
             }
-            // Return true to keep the lobby in the list
-            return true;
+            return true; // Keep the lobby in the list
         });
     
         if (!success) {
@@ -89,7 +89,6 @@ export class LobbyList {
                 ret_val = lobby;
             }
         })
-        console.log(`lobbylsit: couldn't find lobby with id ${lobby_code}`);
 
         return ret_val;
     }
@@ -112,12 +111,21 @@ export class Lobby {
         this.game = new ServerGame();
     }
 
+    printUsers() {
+        console.log(`Users in lobby ${this.code}:`);
+        this.user_list.forEach((user, index) => {
+            console.log(`${index + 1}. Username: ${user.name}, User ID: ${user.id}`);
+        });
+    }
+
     add_user(user: User) {
         this.user_list.push(user);
     }
 
     remove_user(user_to_remove: User) {
-        this.user_list.filter(user => user.id !== user_to_remove.id);
+        this.user_list = this.user_list.filter(user => user.id !== user_to_remove.id);
+        console.log("removed " +  user_to_remove.name + " new user list  :")
+        this.printUsers();
     }
 
     broadcast(message: any, socket_map: Map<string, WebSocket | null> ) {
