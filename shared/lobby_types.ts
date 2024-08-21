@@ -1,5 +1,18 @@
 import * as uuid from "jsr:@std/uuid";
+import { join, extname } from "https://deno.land/std/path/mod.ts"
 import { ServerGame } from "./game_types.ts";
+
+async function getFilesStartingWithNumber(directory: string, number: string): Promise<string[]> {
+    const files = [];
+    
+    for await (const dirEntry of Deno.readDir(directory)) {
+      if (dirEntry.isFile && dirEntry.name.startsWith(number)) {
+        files.push(dirEntry.name);
+      }
+    }
+  
+    return files;
+}
 
 export interface ChatMessage {
     sender: string
@@ -112,6 +125,19 @@ export class Lobby {
         this.game.set_directory(`./uploads/${this.code}/game/`)
     }
 
+    start_game_turn(socket_map: Map<string, WebSocket | null>, turnLengths?: number[]) {
+        if(this.game.turn == 0 && turnLengths && turnLengths.length > 0) {
+            // if first time starting game
+            this.game.set_turn_lengths(turnLengths)
+        } else if (this.game.turn == 0){
+            console.log("setting turn lengths to 5s");
+            this.game.set_turn_lengths(new Array(this.user_list.length).fill(5)) // 5 second default
+        }
+
+        this.game.set_num_players(this.user_list.length);
+        this.game.start_turn(() => this.broadcast_game_end(socket_map));
+    }
+
     printUsers() {
         console.log(`Users in lobby ${this.code}:`);
         this.user_list.forEach((user, index) => {
@@ -144,6 +170,13 @@ export class Lobby {
             type: 'game_start',
         }
         this.broadcast(JSON.stringify(game_start_message), socket_map);
+    }
+
+    broadcast_game_end(socket_map: Map<string, WebSocket | null> ) {
+        const game_end_message = {
+            type: 'game_end',
+        }
+        this.broadcast(JSON.stringify(game_end_message), socket_map);
     }
     
     broadcast_chat_message(message: ChatMessage, socket_map: Map<string, WebSocket | null> ) {
@@ -208,7 +241,7 @@ export class Lobby {
 
         if (this.game.all_users_submitted(this.user_list)) {
             console.log("all users have submitted!");
-            this.broadcast_audio_files(socket_map);
+            this.pass_audio_files(socket_map);
         }
     }
 
@@ -220,6 +253,26 @@ export class Lobby {
         type: 'audio_files',
         files: fileUrls,
         }), socket_map);
+    }
+
+    async pass_audio_files(socket_map: Map<string, WebSocket | null>) {
+        this.user_list.forEach(async user => {
+            const socket = socket_map.get(user.id);
+
+            const folderUrl = this.game.directory + this.game.turnSequences.get(user.name)![this.game.turn]
+
+            const file = await getFilesStartingWithNumber(folderUrl, String(this.game.turn))
+
+            const message = {
+                type: 'audio_file',
+                filename: folderUrl + '/' + file[0],
+            }
+
+            if (socket) {
+                console.log(`found a socket for user ${user.name}, sending file url ${file[0]}`);
+                socket.send(JSON.stringify(message));
+            }
+        })
     }
 }
 

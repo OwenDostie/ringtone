@@ -33,6 +33,7 @@ deno task start
 - common types between client and server
 - players have a time bank
 - allow host to pick the amount of time
+- auto splice progression together with good transitions
 
 ## links
 - react - https://react.dev/learn
@@ -50,7 +51,6 @@ deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
 ## owen todo
 - unselectable text
 - dark mode stuff
-- cookies
 - docker
 
 ## known bugs
@@ -59,4 +59,9 @@ lobby explodes if the only person in it refreshes
 open in incognito is a white screen initially
 audio player is working weirdly / not really working on owens' computer 
 home screen inputs shake upon first load
-delete uploads when users disconnect
+need to delete uploads when users disconnect
+you can upload files that aren't audio
+download buttondownload buttondownload buttondownload buttondownload buttondownload buttondownload buttondownload buttondownload button
+no joining when the game is ongoing or that names already in there
+shouldn't upload before starting
+shouldn't upload multipelt imes

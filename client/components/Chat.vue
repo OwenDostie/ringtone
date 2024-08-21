@@ -3,7 +3,7 @@
     <div class="chat-history" ref="history">
       <p v-for="(message, index) in messages" :key="index" class="chat-message">{{ formatMessage(message) }}</p>
     </div>
-    <input v-model="newMessage" @keyup.enter="sendChat" placeholder="Chat with your team!" />
+    <input v-model="newMessage" @keyup.enter="sendChat" :placeholder="chatPlaceholders[Math.floor(Math.random() * chatPlaceholders.length)]"/>
   </div>
 </template>
 
@@ -28,6 +28,7 @@ export default {
   data() {
     return {
       messages: [] as ChatMessage[],
+      chatPlaceholders: ["i\'m so talented", "let me cook", "it\'s a heater", "this is so fun"],
       newMessage: ''
     };
   },

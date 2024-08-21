@@ -8,24 +8,63 @@ export interface GameInterface {
     running: boolean;
     turnRunning: boolean;
 }
+
 export class ServerGame implements GameInterface {
     numPlayers: number = 1;
     id: string = '';
     turn: number = 0;
     directory: string = ''; 
+    subDirectories: Map<string, string> = new Map<string, string>(); 
     turnLengths: number[] = [];
     running: boolean = false;
     turnRunning: boolean = false;
     submitted_files: Map<string, string[]> = new Map<string, string[]>(); 
+    turnSequences: Map<string, string[]> = new Map<string, string[]>(); 
+     
+    set_num_players(numPlayers: number) {
+        this.numPlayers = numPlayers
+    }
 
-    start(){
-        if(this.running) {
-            console.log('game already running');
-            return;
-        }
+    set_turn_lengths(turnLengths: number[]) {
+        this.turnLengths = turnLengths;
+    }
 
+    generateTurnSequences(user_list) {
+         
+        let subDirectories: string[] = [];
+        user_list.forEach(user => {
+            console.log(user.name +  "user getting subdirectory: " + this.subDirectories.get(user.name))
+            subDirectories.push(this.subDirectories.get(user.name)!);
+        })
+        
+        console.log("TURN SEQUENCES:")
+        user_list.forEach((user, index) => {
+            console.log("user " + user.name)
+            for (let turn = 0; turn < this.numPlayers; turn++) {
+                this.turnSequences.get(user.name)!.push(subDirectories[(index + turn) % this.numPlayers]);
+
+                console.log("turn " + (turn + 1) + " subdirectory: " + subDirectories[(index + turn) % this.numPlayers]);
+            }
+            console.log("\n")
+        });
+    }
+
+    start_turn(callback: ()=> void) {
         this.turn++;
         this.running = true;
+        console.log("turn " + this.turn +"starting! waiting " + this.turnLengths[this.turn - 1] + " ms")
+
+        setTimeout(() => this.finish_turn(callback), this.turnLengths[this.turn - 1] * 1000)
+    }
+
+    finish_turn(callback: () => void) {
+        this.turnRunning = false;
+        console.log("turn " + this.turn + "finished!")
+        callback();
+    }
+
+    increment_turn() {
+        this.turn++;
     }
 
     set_directory(directory: string) {
@@ -47,30 +86,44 @@ export class ServerGame implements GameInterface {
         return files;
     }
 
-    // Method to handle a file submission
     async submit_file(user: User, file: File) {
-        const sanitizedFileName = file.name.replace(/\s+/g, '');
-        const filePath = join(this.directory, sanitizedFileName);
+        const fileNameArr = file.name.replace(/\s+/g, '').split('.');
+        const sanitizedFileName = fileNameArr[0];
+        const fileExt = fileNameArr[1];
+        console.log("file name santiized:" + sanitizedFileName)
+        let filePath;
+
+        if (this.turn = 1) {
+            filePath = join(this.directory, sanitizedFileName)
+            // the order that you submit files will determine the order of passing songs here
+            this.subDirectories.set(user.name, sanitizedFileName)
+            console.log(user.name + "setting subdirectory: " + this.subDirectories.get(user.name) )
+            this.turnSequences.set(user.name, []);
+            mkdir_if_ne(this.directory + sanitizedFileName) 
+        } else {
+            filePath = join(this.directory, this.turnSequences.get(user.name)![this.turn - 1]);
+        }
         const arrayBuffer = await file.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
-        await Deno.writeFile(filePath, uint8Array);
-
-        if (!this.submitted_files.has(user.id)) {
-        this.submitted_files.set(user.id, []);
-        }
-        this.submitted_files.get(user.id)!.push(filePath);
-
-        // You might want to perform additional actions here, like checking submissions
+        await Deno.writeFile(filePath + '/' + String(this.turn) + user.name + '.' + fileExt, uint8Array);
+        this.submitted_files.set(user.id, this.turnSequences[this.turn - 1]);
     }
 
-    // Method to check if all users have submitted a file
     all_users_submitted(user_list: User[]): boolean {
-        return user_list.every(user => {
-            const files = this.submitted_files.get(user.id);
-            const user_submitted = files && files.length > 0;
-            console.log(`${user.name} has submitted a file`)
-            return user_submitted;
+        let ret_val = user_list.every(user => {
+                const user_submitted = this.submitted_files.has(user.id);
+                if (user_submitted) console.log(`${user.name} has submitted a file`)
+                return user_submitted;
         });
+        if (ret_val && this.turn == 1) {
+            this.generateTurnSequences(user_list);
+        }
+
+        if (ret_val) {
+            this.submitted_files.clear();
+        }
+
+        return ret_val
     }
 }
 

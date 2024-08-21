@@ -1,8 +1,9 @@
 <template>
   <div class="app-container">
     <div class="game-container">
-      <div class="top-section">
+      <div :class="{'flash-red': turnEnded && !submittedFile}" class="top-section">
         <h2>GAME TIME</h2>
+        <h2> TURN: {{ turnNumber }}/{{ lobbyMembers.length }}</h2>
         <Timer class="timer" :running="turnRunning" @stopTimer="stopTimer"/>
         <div class="lobby-code">
           <h3>Connected to lobby with code: {{ lobbyCode }}</h3>
@@ -21,10 +22,10 @@
               {{ member }}
             </li>
           </ul>
-          <div v-if="audioFiles.length > 0">
-            <div v-for="file in audioFiles" :key="file" class="audio-file">
-              <label>{{ file.split('/').pop() }}</label>
-              <audio :src="file" controls></audio>
+          <div id="audio-files-container">
+            <div v-if="audioFile">
+              <label>{{ audioFileName }}</label>
+              <audio controls :src="audioFile"></audio>
             </div>
           </div>
         </div>
@@ -62,10 +63,11 @@
   data() {
     return {
       selectedFile: null,
+      submittedFile: false,
       uploadMessage: '',
       turnRunning: false,
       isHost: false,
-      audioFiles: [],
+      audioFile: null as string | null,
     };
   },
   methods: {
@@ -89,6 +91,7 @@
 
         if (response.ok) {
           this.uploadMessage = "File uploaded successfully!";
+          this.submittedFile = true;
         } else {
           this.uploadMessage = "Failed to upload file.";
         }
@@ -107,22 +110,6 @@
     stopTimer(){
       this.turnRunning = false;
     },
-    displayAudioFiles(files: string[]) {
-      const container = document.getElementById('audio-files-container');
-      container!.innerHTML = ''; // Clear the container first
-
-      files.forEach((fileUrl) => {
-        const audioElement = document.createElement('audio');
-        audioElement.controls = true;
-        audioElement.src = fileUrl;
-
-        const fileLabel = document.createElement('label');
-        fileLabel.textContent = fileUrl.split('/').pop(); // Display just the file name
-
-        container!.appendChild(fileLabel);
-        container!.appendChild(audioElement);
-      });
-    },
   },
   setup() {
     const websocketState = inject<WebSocketState>('websocketState');
@@ -138,22 +125,40 @@
     const lobbyCode = computed(() => websocketState.lobbyCode)
 
     const turnRunning = computed(() => websocketState.turnRunning);
+    const turnEnded = computed(() => websocketState.turnEnded);
+    const turnNumber = computed(() => websocketState.turnNumber);
 
     return {
       lobbyMembers: lobbyMembers,
       lobbyCode: lobbyCode,
       isHost: isHost,
       turnRunning: turnRunning,
+      turnEnded: turnEnded,
+      turnNumber: turnNumber,
       sendMessage
     };
+  },
+  watch: {
+    turnEnded(turnNowStarting, turnNowEnding) {
+      console.log("watch working" + turnNowEnding)
+      if (!turnNowStarting) {
+        this.submittedFile = false;
+      }
+    }
+  },
+  computed: {
+    audioFileName(): string | null {
+      return this.audioFile ? this.audioFile.split('/').pop() : null;
+    }
   },
   mounted() {
     const socket = this.websocketState.socket;
     socket.addEventListener('message', (event: MessageEvent) => {
       const messageObj = JSON.parse(event.data);
 
-      if (messageObj.type === 'audio_files') {
-        this.audioFiles = messageObj.files;  // Update the audioFiles array
+      if (messageObj.type === 'audio_file') {
+        this.audioFile = messageObj.filename; 
+        console.log("got audio file: " + this.audioFile)
       }
     });
   }
@@ -275,5 +280,21 @@ html, body {
 
 body {
   padding: 0;
+}
+
+.flash-red {
+  animation: flash-red 1s infinite;
+}
+
+@keyframes flash-red {
+  0% {
+    background-color: white;
+  }
+  50% {
+    background-color: red;
+  }
+  100% {
+    background-color: white;
+  }
 }
 </style>

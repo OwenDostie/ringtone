@@ -247,8 +247,9 @@ serve(async (request) => {
             console.log('couldnt start that shit')
             return
           }
-          lobby.game.start()
           lobby.broadcast_game_start(user_sockets)
+
+          lobby.start_game_turn(user_sockets)
         }
         case 'round_ready': {
 

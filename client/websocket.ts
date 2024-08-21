@@ -11,6 +11,8 @@ export interface WebSocketState {
     lobbyHost: string | null;
     turn: number;
     turnRunning: boolean;
+    turnEnded: boolean;
+    turnNumber: number;
     err: string;
   }
   
@@ -23,6 +25,8 @@ export interface WebSocketState {
     lobbyHost: null,
     turn: 0,
     turnRunning: false,
+    turnEnded: false,
+    turnNumber: 0,
     err: '',
   });
 
@@ -111,7 +115,13 @@ function connectWebsocket() {
               }
               console.log("tryan start game");
               state.turnRunning = true;
+              state.turnEnded = false;
+              state.turnNumber++;
               break;
+          }
+          case 'game_end': {
+              state.turnRunning = false;
+              state.turnEnded = true;
           }
         }
 
@@ -138,7 +148,6 @@ export function sendMessage(message: string) {
       console.warn('Cannot send message: WebSocket is not connected.');
     }
 }
-
 
 export function setupWebsocket() {
     onMounted(() => {
