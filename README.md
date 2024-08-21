@@ -10,6 +10,13 @@ install denon for hot reloading
 deno task start
 ```
 
+## How to build + run image w/ docker
+```
+docker build -t ringtone .
+docker run --rm -it -p 80:80 ringtone
+deno task start
+```
+
 ## stack
 - runtime - deno
 - front end: vue
@@ -43,14 +50,22 @@ deno task start
 - vue & deno tutorial https://docs.deno.com/runtime/tutorials/how_to_with_npm/vue/
     - this also says if you run this command you can create a template project with ANY FRONTEND FRAMEOWKR
 - do more player orders than just a circle
+- docker examples - https://github.com/docker/awesome-compose
 ```
 deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
 ```
 
 ## owen todo
+### docker
+- download docker
+- determine 
+- get server running locally with docker
+- pick a cloud provider/ecosystem
+
+
+### misc 
 - unselectable text
 - dark mode stuff
-- cookies
 - docker
 
 ## known bugs
