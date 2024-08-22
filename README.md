@@ -57,10 +57,10 @@ deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
 
 ## owen todo
 ### docker
-- download docker
-- determine 
-- get server running locally with docker
 - pick a cloud provider/ecosystem
+- test web server there
+- create database/file store locally
+- ffmpeg for client-side audio conversion
 
 
 ### misc 
