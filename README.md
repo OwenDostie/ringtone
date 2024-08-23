@@ -59,9 +59,6 @@ lobby explodes if the only person in it refreshes
 open in incognito is a white screen initially
 audio player is working weirdly / not really working on owens' computer 
 home screen inputs shake upon first load
-need to delete uploads when users disconnect
-you can upload files that aren't audio
-download buttondownload buttondownload buttondownload buttondownload buttondownload buttondownload buttondownload buttondownload button
 no joining when the game is ongoing or that names already in there
 shouldn't upload before starting
 shouldn't upload multipelt imes

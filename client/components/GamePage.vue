@@ -1,10 +1,10 @@
 <template>
   <div class="app-container">
     <div class="game-container">
-      <div :class="{'flash-red': turnEnded && !submittedFile}" class="top-section">
+      <div :class="{'flash-red': timerEnded && !submittedFile}" class="top-section">
         <h2>GAME TIME</h2>
         <h2> TURN: {{ turnNumber }}/{{ lobbyMembers.length }}</h2>
-        <Timer class="timer" :running="turnRunning" @stopTimer="stopTimer"/>
+        <Timer class="timer" ref="timerRef" :running="turnRunning" @endTimer="endTimer"/>
         <div class="lobby-code">
           <h3>Connected to lobby with code: {{ lobbyCode }}</h3>
         </div>
@@ -20,10 +20,12 @@
           <ul>
             <li v-for="member in lobbyMembers" :key="member" class="lobby-member">
               {{ member }}
+              <span v-if="submittedFile" class="check-mark">✔️</span>
+              <span v-if="isHost" class="crown">👑</span>
             </li>
           </ul>
 
-          <div id="audio-files-container">
+          <div id="audio-container">
             <div v-if="audioFiles.length > 0">
               <div v-for="file in audioFiles" :key="file" class="audio-file">
                 <label>{{ getDirectoryAboveFilename(file) }}</label><br>
@@ -31,11 +33,12 @@
               </div>
             </div>
 
-            <div v-if="finalAudioFiles.length > 0">
+            <div v-if="finalAudioFiles.length > 0" class="audio-container">
               <div v-for="(finalSong, songIndex) in finalAudioFiles" :key="songIndex" class="audio-file">
                 <label>{{ getDirectoryAboveFilename(finalSong[0]) }}</label><br>
                 <div v-for="(file, fileIndex) in finalSong" :key="songIndex + '-' + fileIndex" class="audio-file">
                   <audio :src="file" controls></audio>
+                  <a :href="file" :download="getFilename(file)" class="download-button">Download</a>
                 </div>
               </div>
             </div>
@@ -46,11 +49,17 @@
         <div class="userActions">
           <div class="upload-container">
             <input type="file" @change="handleFileUpload" />
-            <button @click="uploadFile">Upload File</button>
+            <button @click="uploadFile">upload mp3</button>
             <p v-if="uploadMessage">{{ uploadMessage }}</p>
           </div>
-          <div class="start-button" v-if="isHost">
-            <button @click="onClickStart" type="button">Start game</button><br>
+          <div class="start-button" v-if="isHost && turnNumber == 0">
+            <button @click="onClickStart" type="button">start game</button><br>
+          </div>
+          <div class="start-button" v-if="isHost && turnNumber != 0 && turnNumber < lobbyMembers.length && !turnEnded">
+            <button @click="onClickStart" type="button">start turn {{ turnNumber + 1 }}</button><br>
+          </div>
+          <div class="start-button" v-if="isHost && turnNumber >= lobbyMembers.length">
+            <button @click="onClickNewGame" type="button">new game</button><br>
           </div>
         </div>
       </div>
@@ -78,6 +87,7 @@
       submittedFile: false,
       uploadMessage: '',
       turnRunning: false,
+      timerEnded: false,
       isHost: false,
       audioFiles: [] as string[],
     };
@@ -87,8 +97,11 @@
       this.selectedFile = event.target.files[0];
     },
     async uploadFile() {
-      if (!this.selectedFile) {
-        this.uploadMessage = "Please select a file to upload.";
+      if (!this.selectedFile ) {
+        this.uploadMessage = "please select a file!";
+        return;
+      } else if (!this.turnRunning && !this.turnEnded) {
+        this.uploadMessage = "watchu uploading for boi?";
         return;
       }
 
@@ -102,14 +115,15 @@
         });
 
         if (response.ok) {
-          this.uploadMessage = "File uploaded successfully!";
+          this.uploadMessage = "file uploaded successfully!";
           this.submittedFile = true;
         } else {
-          this.uploadMessage = "Failed to upload file.";
+          const errorMessage = await response.text();
+          this.uploadMessage = errorMessage;
         }
       } catch (error) {
         console.error('Error uploading file:', error);
-        this.uploadMessage = "An error occurred during file upload.";
+        this.uploadMessage = "an error occurred during file upload.";
       }
     },
     onClickStart(){
@@ -118,14 +132,26 @@
       }
       this.sendMessage(JSON.stringify(msg));
     },
-    stopTimer(){
+    onClickNewGame(){
+      const msg = {
+        type: 'new_game_request'
+      }
+      this.sendMessage(JSON.stringify(msg));
+    },
+    endTimer(){
+      this.timerEnded = true;
       this.turnRunning = false;
     },
     getDirectoryAboveFilename(filePath: string) {
       const normalizedPath = filePath.replace(/\\/g, '/');
       const parts = normalizedPath.split('/');
       return parts.length > 1 ? parts[parts.length - 2] : '';
-  }
+    },
+    getFilename(filePath: string) {
+      const normalizedPath = filePath.replace(/\\/g, '/');
+      const parts = normalizedPath.split('/');
+      return parts.length > 1 ? parts[parts.length - 1] : '';
+    }
   },
   setup() {
     const websocketState = inject<WebSocketState>('websocketState');
@@ -143,6 +169,7 @@
     const turnNumber = computed(() => websocketState.turnNumber);
 
     const audioFiles = ref<string[]>([]);
+    const timerRef = ref(null);
 
     const finalAudioFiles = ref<string[][]>([]);
 
@@ -170,6 +197,7 @@
     });
 
     return {
+      timerRef,
       audioFiles,
       finalAudioFiles,
       lobbyMembers,
@@ -182,10 +210,16 @@
     };
   },
   watch: {
-    turnEnded(turnNowStarting, turnNowEnding) {
+    turnEnded(turnNowEnding, turnNowStarting) {
       console.log("watch working" + turnNowEnding)
-      if (!turnNowStarting) {
+      if (turnNowEnding) {
         this.submittedFile = false;
+        this.timerEnded = false;
+      }
+      if (turnNowEnding) {
+        if (this.timerRef.value) {
+          this.timerRef.value.stop(); // Call the stop method on the Timer component
+        }
       }
     }
   },
@@ -267,6 +301,13 @@
   list-style: none;
   padding: 5px 0;
   border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.check-mark, .crown {
+  margin-left: 10px;
 }
 
 .lobby-member:last-child {
@@ -309,6 +350,35 @@ body {
 
 .flash-red {
   animation: flash-red 1s infinite;
+}
+.audio-container {
+  max-height: 400px; /* Set a maximum height for the container */
+  overflow-y: auto;  /* Enable vertical scrolling if content overflows */
+  border: 1px solid #ccc; /* Optional: Add a border for better visual separation */
+  padding: 10px; /* Optional: Add some padding for spacing */
+}
+
+.audio-file {
+  margin-bottom: 15px; /* Add some space between audio files */
+  display: flex;
+  align-items: center;
+}
+
+label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.download-button {
+  margin-left: 10px; /* Space between audio player and download button */
+  text-decoration: none;
+  color: #007bff;
+  font-size: 14px;
+}
+
+.download-button:hover {
+  text-decoration: underline;
 }
 
 @keyframes flash-red {

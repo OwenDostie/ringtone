@@ -1,5 +1,6 @@
 import * as uuid from "jsr:@std/uuid";
 import { join, extname } from "https://deno.land/std/path/mod.ts"
+import { existsSync } from "https://deno.land/std/fs/mod.ts";
 import { ServerGame } from "./game_types.ts";
 
 async function getFilesStartingWithNumber(directory: string, number: string): Promise<string[]> {
@@ -85,10 +86,11 @@ export class LobbyList {
         }
     }
 
-    remove_user_from_lobby(user: User, lobby_code: string) {
+
+    async remove_user_from_lobby(user: User, lobby_code: string) {
         let success = false;
     
-        this.lobby_list = this.lobby_list.filter((lobby) => {
+        this.lobby_list = this.lobby_list.filter(async (lobby) => {
             if (lobby.code === lobby_code) {
                 lobby.remove_user(user);
                 console.log(`removed user ${user.name} from lobby with code ${lobby.code}`);
@@ -96,6 +98,18 @@ export class LobbyList {
     
                 if (lobby.user_list.length === 0) {
                     console.log(`lobby with code ${lobby.code} is empty and will be removed`);
+    
+                    // Delete the lobby's directory
+                    const lobbyDirectory = lobby.directory; // Assuming the lobby has a directory property
+                    if (lobbyDirectory && existsSync(lobbyDirectory)) {
+                        try {
+                            await Deno.remove(lobbyDirectory, { recursive: true });
+                            console.log(`lobby directory ${lobbyDirectory} has been deleted`);
+                        } catch (error) {
+                            console.error(`Failed to delete lobby directory ${lobbyDirectory}:`, error);
+                        }
+                    }
+    
                     return false; // Remove the lobby from the list
                 }
             }
@@ -126,6 +140,7 @@ export class Lobby {
     id: string;
     game: ServerGame;
     code: string;
+    directory: string;
     host: User;
     user_list: User[];
 
@@ -134,8 +149,14 @@ export class Lobby {
         this.user_list = [];
         this.add_user(host);
         this.code = this.generateLobbyCode();
+        this.directory = `./uploads/${this.code}`
         this.game = new ServerGame();
-        this.game.set_directory(`./uploads/${this.code}/game/`)
+        this.game.set_directory(join(this.directory, 'game'))
+    }
+
+    restart_game(socket_map: Map<string, WebSocket | null>) {
+         this.game.restart()
+         this.start_game_turn(socket_map)
     }
 
     start_game_turn(socket_map: Map<string, WebSocket | null>, turnLengths?: number[]) {
@@ -164,6 +185,9 @@ export class Lobby {
 
     remove_user(user_to_remove: User) {
         this.user_list = this.user_list.filter(user => user.id !== user_to_remove.id);
+        if (this.host == user_to_remove && this.user_list.length > 0) {
+            this.host = this.user_list[0];
+        }
         console.log("removed " +  user_to_remove.name + " new user list  :")
         this.printUsers();
     }
@@ -178,9 +202,10 @@ export class Lobby {
         })
     }
 
-    broadcast_game_start(socket_map: Map<string, WebSocket | null> ) {
+    broadcast_game_start(new_game: boolean, socket_map: Map<string, WebSocket | null> ) {
         const game_start_message = {
             type: 'game_start',
+            new_game: new_game,
         }
         this.broadcast(JSON.stringify(game_start_message), socket_map);
     }
@@ -217,6 +242,7 @@ export class Lobby {
             host: this.host.name,
         }
 
+        console.log("sending lobby update: " + JSON.stringify(lobby_update_message))
         return JSON.stringify(lobby_update_message);
     }
 
@@ -263,6 +289,7 @@ export class Lobby {
                 console.log("passing file to next person")
                 this.pass_audio_files(socket_map);
             }
+            this.broadcast_game_end(socket_map)
         }
     }    
 
@@ -346,10 +373,10 @@ export class User {
         }
     }
 
-    send_failed_lobby_join_message(bad_code: string, socket_map: Map<string, WebSocket | null>) {
+    send_failed_lobby_join_message(error_message: string, socket_map: Map<string, WebSocket | null>) {
         const failed_Join_lobby_msg = {
             type: 'failed_join_lobby',
-            error_message: `Couldn't find a lobby with message ${bad_code}.`
+            error_message: error_message
         }
 
         this.send_message(JSON.stringify(failed_Join_lobby_msg), socket_map);

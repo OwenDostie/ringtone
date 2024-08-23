@@ -114,14 +114,24 @@ serve(async (request) => {
     const file = formData.get("file") as File
 
     if (file) {
-      console.log("file valid")
-      console.log(`use ${sessionId} lobby code is ${user?.lobby_code}`)
-      const lobby = lobby_list.get_lobby_with_code(user.lobby_code)
-      lobby?.submit_file(user, file, user_sockets)
-      return new Response("File uploaded successfully", { status: 200 })
+      // Check if the file is an MP3
+      const fileName = file.name.toLowerCase();
+      const fileType = file.type; // MIME type
+  
+      if ((fileName.endsWith('.mp3') && fileType === 'audio/mpeg') || 
+          (fileName.endsWith('.wav') && fileType === 'audio/wav')){
+        console.log("file valid");
+        console.log(`use ${sessionId} lobby code is ${user?.lobby_code}`);
+        const lobby = lobby_list.get_lobby_with_code(user.lobby_code);
+        lobby?.submit_file(user, file, user_sockets);
+        return new Response("upload success!", { status: 200 });
+      } else {
+        console.log("Invalid file type. Only MP3 files are allowed.");
+        return new Response("mp3 files only please!", { status: 400 });
+      }
     }
-
-    return new Response("No file uploaded", { status: 400 })
+  
+    return new Response("no valid file.", { status: 400 });
   }
 
   else if (request.method === "GET" && pathname.startsWith("/uploads/")) {
@@ -224,16 +234,27 @@ serve(async (request) => {
         }
         case 'join_request': {
           const requested_lobby = lobby_list.get_lobby_with_code(message_obj.lobby_code)
+          user.set_name(message_obj.user_name)
+          user_session_ids.set(user.id, user);
           
           if (!requested_lobby) {
+            // no such lobby
             console.log(`couldn't find lobby with id ${message_obj.lobby_code}`)
-            user.send_failed_lobby_join_message(message_obj.lobby_code, user_sockets)
+            user.send_failed_lobby_join_message(`couldn't find a lobby with code: ${message_obj.lobby_code}`, user_sockets)
+          } else if (requested_lobby.user_list.some(lobby_user => lobby_user.id == user.id)) {
+            // id is taken
+            user.send_failed_lobby_join_message(`it looks like you're already in lobby ${message_obj.lobby_code}. check your other tabs?`, user_sockets)
+          } else if (requested_lobby.user_list.some(lobby_user => lobby_user.name == user.name)) {
+            // user name is taken
+            user.send_failed_lobby_join_message(`someone in lobby ${message_obj.lobby_code} took the name ${user.name}`, user_sockets)
+          } else if (requested_lobby.game.running) {
+            user.send_failed_lobby_join_message(`lobby ${message_obj.lobby_code} is in the middle of a game!`, user_sockets)
           } else {
-            user.set_name(message_obj.user_name)
+
             user.set_lobby_code(message_obj.lobby_code)
             user_session_ids.set(user.id, user);
             const test_user = user_session_ids.get(sessionId);
-          console.log(`user ${user.name} with ${sessionId}, ${user.id} lobby code is ${test_user?.lobby_code}`)
+            console.log(`user ${user.name} with ${sessionId}, ${user.id} lobby code is ${test_user?.lobby_code}`)
             lobby_list.add_user_to_lobby(user, message_obj.lobby_code)
             
             requested_lobby.broadcast_lobby_update(user_sockets)
@@ -247,9 +268,22 @@ serve(async (request) => {
             console.log('couldnt start that shit')
             return
           }
-          lobby.broadcast_game_start(user_sockets)
+          lobby.broadcast_game_start(false, user_sockets)
 
           lobby.start_game_turn(user_sockets)
+          break
+        }
+
+        case 'new_game_request': {
+          const lobby = lobby_list.get_lobby_with_code(user.lobby_code)
+          if (!lobby) {
+            console.log('couldnt start that shit')
+            return
+          }
+          lobby.broadcast_game_start(true, user_sockets)
+
+          lobby.restart_game(user_sockets)
+          break
         }
         case 'round_ready': {
 

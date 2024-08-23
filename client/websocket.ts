@@ -12,6 +12,7 @@ export interface WebSocketState {
     turn: number;
     turnRunning: boolean;
     turnEnded: boolean;
+    timerEnded: boolean;
     turnNumber: number;
     err: string;
   }
@@ -26,6 +27,7 @@ export interface WebSocketState {
     turn: 0,
     turnRunning: false,
     turnEnded: false,
+    timerEnded: false,
     turnNumber: 0,
     err: '',
   });
@@ -116,7 +118,11 @@ function connectWebsocket() {
               console.log("tryan start game");
               state.turnRunning = true;
               state.turnEnded = false;
-              state.turnNumber++;
+              if (message_obj.new_game == false) {
+                state.turnNumber++;
+              } else {
+                state.turnNumber = 1;
+              }
               break;
           }
           case 'game_end': {

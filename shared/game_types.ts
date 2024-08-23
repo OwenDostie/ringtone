@@ -18,15 +18,19 @@ export class ServerGame implements GameInterface {
     turnLengths: number[] = [];
     running: boolean = false;
     turnRunning: boolean = false;
-    submitted_files: Map<string, string[]> = new Map<string, string[]>(); 
+    submitted_files: Map<string, string> = new Map<string, string>(); 
     turnSequences: Map<string, string[]> = new Map<string, string[]>(); 
-     
+ 
     set_num_players(numPlayers: number) {
         this.numPlayers = numPlayers
     }
 
     set_turn_lengths(turnLengths: number[]) {
         this.turnLengths = turnLengths;
+    }
+
+    restart() {
+        this.turn = 0
     }
 
     generateTurnSequences(user_list) {
@@ -58,6 +62,10 @@ export class ServerGame implements GameInterface {
     }
 
     finish_turn(callback: () => void) {
+        if (!this.turnRunning) {
+            console.log("turn " + this.turn + "is already finished!")
+            return;
+        }
         this.turnRunning = false;
         console.log("turn " + this.turn + "finished!")
         callback();
@@ -86,25 +94,28 @@ export class ServerGame implements GameInterface {
         const fileNameArr = file.name.replace(/\s+/g, '').split('.');
         const sanitizedFileName = fileNameArr[0];
         const fileExt = fileNameArr[1];
-        console.log("file name santiized:" + sanitizedFileName)
+        console.log("file name sanitized:" + sanitizedFileName);
         let filePath;
-
-        if (this.turn == 1) {
-            filePath = join(this.directory, sanitizedFileName)
-            // the order that you submit files will determine the order of passing songs here
-            this.subDirectories.set(user.name, sanitizedFileName)
-            console.log(user.name + "setting subdirectory: " + this.subDirectories.get(user.name) )
+    
+        if (this.turn === 1) {
+            filePath = join(this.directory, sanitizedFileName);
+            this.subDirectories.set(user.name, sanitizedFileName);
+            console.log(user.name + " setting subdirectory: " + this.subDirectories.get(user.name));
             this.turnSequences.set(user.name, []);
-            mkdir_if_ne(this.directory + sanitizedFileName) 
+            mkdir_if_ne(filePath);  
         } else {
             filePath = join(this.directory, this.turnSequences.get(user.name)![this.turn - 1]);
+            mkdir_if_ne(filePath);  
         }
+    
+        const fullFilePath = join(filePath, `${this.turn}${user.name}.${fileExt}`);
+    
         const arrayBuffer = await file.arrayBuffer();
         const uint8Array = new Uint8Array(arrayBuffer);
-        await Deno.writeFile(filePath + '/' + String(this.turn) + user.name + '.' + fileExt, uint8Array);
-        this.submitted_files.set(user.id, this.turnSequences[this.turn - 1]);
+        await Deno.writeFile(fullFilePath, uint8Array);
+    
+        this.submitted_files.set(user.id, this.turnSequences.get(user.name)![this.turn - 1]);
     }
-
     all_users_submitted(user_list: User[]): boolean {
         let ret_val = user_list.every(user => {
                 const user_submitted = this.submitted_files.has(user.id);
