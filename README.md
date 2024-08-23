@@ -11,6 +11,11 @@ A web-based game for making music *together* (on the internet).
 
 These are all some form of alias for `deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest`, see [deno.json](deno.json) or [denon.json](denon.json) for details.
 
+## Deploy Server
+Using [Deno Deploy](https://deno.com/deploy)
+
+# wip stuff
+
 ## would be nice
 - tsl on websocket aka wss
 - front-end framework
@@ -43,7 +48,6 @@ deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
 ### misc 
 - unselectable text
 - dark mode stuff
-- docker
 
 ## known bugs
 when you join a lobby from the same browser/ new tab, it will show two of the secon'd tabs user 

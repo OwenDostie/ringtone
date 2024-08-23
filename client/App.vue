@@ -6,7 +6,6 @@
       </a>
       <img :src="state.isConnected ? 'socketConnected.png' : 'socketDisconnected.png'" class="websocket-indicator" :title="JSON.stringify(state)"></img>
     </div>
-      <audio src="/ringtone1.mp3" autoplay></audio>
       <router-view />
   </div>
 </template>;

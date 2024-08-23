@@ -30,14 +30,14 @@ export interface WebSocketState {
     timerEnded: false,
     turnNumber: 0,
     err: '',
-  });
+  })
 
 function getSessionData() {
   const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
-    const [name, value] = cookie.split('=');
-    acc[name] = decodeURIComponent(value);
-    return acc;
-  }, {});
+    const [name, value] = cookie.split('=')
+    acc[name] = decodeURIComponent(value)
+    return acc
+  }, {})
 
   console.log("cookies: " + cookies.sessionId + ", " + cookies.lobbyId + ", " + cookies.username);
 
@@ -45,7 +45,7 @@ function getSessionData() {
     sessionId: cookies.sessionId || null,
     lobbyId: cookies.lobbyId || null,
     username: cookies.username || null,
-  };
+  }
 }
 
 function connectWebsocket() {
@@ -53,31 +53,31 @@ function connectWebsocket() {
     const route = useRoute();
 
     if (state.socket) {
-        console.warn('WebSocket already connected.');
-        return;
+        console.warn('WebSocket already connected.')
+        return
     }
 
-    const sessionData = getSessionData();
+    const sessionData = getSessionData()
     if (!sessionData.sessionId) {
-        console.error("Session ID is missing. Cannot establish WebSocket connection.");
-        return;
+        console.error("Session ID is missing. Cannot establish WebSocket connection.")
+        return
     }
 
     const sessionId = sessionData.sessionId;
     console.log("tryna establisdh ws connection with sessin id " + sessionId)
 
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
     const hostname = window.location.hostname;
-    const port = window.location.port ? `:${window.location.port}` : '';
-    const wsUri = `${protocol}://${hostname}${port}/socket?sessionId=${sessionId}`;
+    const port = window.location.port ? `:${window.location.port}` : ''
+    const wsUri = `${protocol}://${hostname}${port}/socket?sessionId=${sessionId}`
     console.log("ws uri: " + wsUri)
-    const socket = new WebSocket(wsUri);
+    const socket = new WebSocket(wsUri)
 
     socket.onopen = (e) => {
-      console.log("CONNECTED");
-      state.isConnected = true;
+      console.log("CONNECTED")
+      state.isConnected = true
 
-      const isOnGameRoute = route.path === '/game';
+      const isOnGameRoute = route.path === '/game'
 
       if (isOnGameRoute && sessionData.lobbyId && sessionData.username) {
           sendMessage(JSON.stringify({
