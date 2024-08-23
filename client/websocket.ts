@@ -58,6 +58,11 @@ function connectWebsocket() {
     }
 
     const sessionData = getSessionData();
+    if (!sessionData.sessionId) {
+        console.error("Session ID is missing. Cannot establish WebSocket connection.");
+        return;
+    }
+
     const sessionId = sessionData.sessionId;
     console.log("tryna establisdh ws connection with sessin id " + sessionId)
 
@@ -65,6 +70,7 @@ function connectWebsocket() {
     const hostname = window.location.hostname;
     const port = window.location.port ? `:${window.location.port}` : '';
     const wsUri = `${protocol}://${hostname}${port}/socket?sessionId=${sessionId}`;
+    console.log("ws uri: " + wsUri)
     const socket = new WebSocket(wsUri);
 
     socket.onopen = (e) => {

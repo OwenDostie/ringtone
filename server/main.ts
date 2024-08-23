@@ -73,7 +73,7 @@ function setSessionCookie(headers: Headers, sessionId: string, lobbyId?: string,
 
 serve(async (request) => {
   const url = new URL(request.url);
-  const pathname = url.pathname;
+  let pathname = url.pathname;
 
   const cookies = getCookies(request.headers);
   let sessionId = cookies.sessionId;
@@ -167,6 +167,11 @@ serve(async (request) => {
     const { socket, response } = Deno.upgradeWebSocket(request);
 
     console.log("establishing ws connection with session id " + sessionId);
+    if (!sessionId) {
+        console.error("Session ID is missing. Cannot establish WebSocket connection.");
+        socket.close();
+        return response;
+      }
 
     let user: User;
     if (!user_session_ids.has(sessionId)) {
