@@ -10,7 +10,7 @@ export interface GameInterface {
 }
 
 export class ServerGame implements GameInterface {
-    numPlayers: number = 1;
+    numPlayers: number = 0;
     id: string = '';
     turn: number = 0;
     directory: string = ''; 
@@ -72,10 +72,6 @@ export class ServerGame implements GameInterface {
         mkdir_if_ne(directory)
     }
 
-    setNumPlayers(num_players: number){
-        this.numPlayers = num_players;
-    }
-
     async getAllFiles(): Promise<string[]> {
         const files: string[] = [];
         for await (const entry of Deno.readDir(this.directory)) {
@@ -93,7 +89,7 @@ export class ServerGame implements GameInterface {
         console.log("file name santiized:" + sanitizedFileName)
         let filePath;
 
-        if (this.turn = 1) {
+        if (this.turn == 1) {
             filePath = join(this.directory, sanitizedFileName)
             // the order that you submit files will determine the order of passing songs here
             this.subDirectories.set(user.name, sanitizedFileName)

@@ -14,6 +14,19 @@ async function getFilesStartingWithNumber(directory: string, number: string): Pr
     return files;
 }
 
+async function getAllFiles(directory: string): Promise<string[]> {
+    const files = [];
+    console.log("checking fi;les in direcotry " + directory)
+    
+    for await (const dirEntry of Deno.readDir(directory)) {
+      if (dirEntry.isFile) {
+        files.push(dirEntry.name);
+      }
+    }
+  
+    return files;
+}
+
 export interface ChatMessage {
     sender: string
     content: string
@@ -129,7 +142,7 @@ export class Lobby {
         if(this.game.turn == 0 && turnLengths && turnLengths.length > 0) {
             // if first time starting game
             this.game.set_turn_lengths(turnLengths)
-        } else if (this.game.turn == 0){
+        } else if (this.game.turn == 0) {
             console.log("setting turn lengths to 5s");
             this.game.set_turn_lengths(new Array(this.user_list.length).fill(5)) // 5 second default
         }
@@ -164,7 +177,7 @@ export class Lobby {
             }
         })
     }
-    
+
     broadcast_game_start(socket_map: Map<string, WebSocket | null> ) {
         const game_start_message = {
             type: 'game_start',
@@ -178,7 +191,7 @@ export class Lobby {
         }
         this.broadcast(JSON.stringify(game_end_message), socket_map);
     }
-    
+
     broadcast_chat_message(message: ChatMessage, socket_map: Map<string, WebSocket | null> ) {
         const msg = {
             type: 'chat_update',
@@ -236,46 +249,78 @@ export class Lobby {
             console.log("name: " + user.name + "\t id: " + user.id + "\n");
         }
     }
+
     async submit_file(user: User, file: File, socket_map: Map<string, WebSocket | null>) {
         await this.game.submit_file(user, file);
 
         if (this.game.all_users_submitted(this.user_list)) {
-            console.log("all users have submitted!");
-            this.pass_audio_files(socket_map);
+            console.log("all users have submitted! turn: " + this.game.turn);
+            if (this.game.turn == this.game.numPlayers) {
+                console.log("Game is over! broadcasting final files")
+                this.broadcast_audio_files(socket_map);
+
+            } else {
+                console.log("passing file to next person")
+                this.pass_audio_files(socket_map);
+            }
         }
+    }    
+
+    // You would also need a helper method in your `ServerGame` class:
+    async getAllFilesInSubDirectory(subdirectory: string): Promise<string[]> {
+        const files: string[] = [];
+        const subdirectoryPath = join(this.game.directory, subdirectory);
+        
+        for await (const entry of Deno.readDir(subdirectoryPath)) {
+            if (entry.isFile) {
+                files.push(join(subdirectoryPath, entry.name));
+            }
+        }
+        return files;
     }
 
     async broadcast_audio_files(socket_map: Map<string, WebSocket | null>) {
-        const allFiles = await this.game.getAllFiles();
-        const fileUrls = allFiles.map(file => this.game.directory + file);
-
+        let fileUrls: string[][] = [];
+    
+        // Using map to get promises for all subdirectories
+        const fileUrlsPromises = Array.from(this.game.subDirectories.values()).map(async (subdirectory) => {
+            console.log("checking subdirectory " + subdirectory);
+            return await this.getAllFilesInSubDirectory(subdirectory);
+        });
+    
+        // Await all promises
+        fileUrls = await Promise.all(fileUrlsPromises);
+    
+        console.log("final audio files: ", fileUrls);
+    
+        // Broadcasting final_audio_files with correct structure
         this.broadcast(JSON.stringify({
-        type: 'audio_files',
-        files: fileUrls,
+            type: 'final_audio_files',
+            filenames: fileUrls,
         }), socket_map);
     }
+    
+
 
     async pass_audio_files(socket_map: Map<string, WebSocket | null>) {
         this.user_list.forEach(async user => {
             const socket = socket_map.get(user.id);
 
             const folderUrl = this.game.directory + this.game.turnSequences.get(user.name)![this.game.turn]
-
-            const file = await getFilesStartingWithNumber(folderUrl, String(this.game.turn))
+            const files = await getFilesStartingWithNumber(folderUrl, String(this.game.turn))
 
             const message = {
-                type: 'audio_file',
-                filename: folderUrl + '/' + file[0],
+                type: 'audio_files',
+                filenames: files.map(file => folderUrl + '/' + file),
             }
 
             if (socket) {
-                console.log(`found a socket for user ${user.name}, sending file url ${file[0]}`);
+                console.log(`found a socket for user ${user.name}, sending file url ${files}`);
                 socket.send(JSON.stringify(message));
             }
         })
     }
 }
-
 
 
 export class User {

@@ -269,20 +269,16 @@ serve(async (request) => {
 
     return response
   } else {
-    // Extract the pathname from the request URL
     const url = new URL(request.url, `http://${request.headers.get("host")}`)
     let pathname = url.pathname;
 
-    // If the request is for the root path, serve index.html
     if (pathname === "/") {
       pathname = "/index.html";
     }
   
-    // Construct the file path
     const filePath = join(staticDir, pathname);
   
     try {
-      // Try to read the requested file
       const file = await Deno.readFile(filePath);
       const fileExt = extname(filePath);
       const contentType = mimeTypes[fileExt] || "application/octet-stream";

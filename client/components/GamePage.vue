@@ -22,12 +22,25 @@
               {{ member }}
             </li>
           </ul>
+
           <div id="audio-files-container">
-            <div v-if="audioFile">
-              <label>{{ audioFileName }}</label>
-              <audio controls :src="audioFile"></audio>
+            <div v-if="audioFiles.length > 0">
+              <div v-for="file in audioFiles" :key="file" class="audio-file">
+                <label>{{ getDirectoryAboveFilename(file) }}</label><br>
+                <audio :src="file" controls></audio>
+              </div>
+            </div>
+
+            <div v-if="finalAudioFiles.length > 0">
+              <div v-for="(finalSong, songIndex) in finalAudioFiles" :key="songIndex" class="audio-file">
+                <label>{{ getDirectoryAboveFilename(finalSong[0]) }}</label><br>
+                <div v-for="(file, fileIndex) in finalSong" :key="songIndex + '-' + fileIndex" class="audio-file">
+                  <audio :src="file" controls></audio>
+                </div>
+              </div>
             </div>
           </div>
+
         </div>
 
         <div class="userActions">
@@ -52,7 +65,6 @@
   import Timer from './Timer.vue'
   import Chat from './Chat.vue'
 
-
   export default defineComponent({
   inject: ['websocketState'], 
   name: 'GamePage',
@@ -67,7 +79,7 @@
       uploadMessage: '',
       turnRunning: false,
       isHost: false,
-      audioFile: null as string | null,
+      audioFiles: [] as string[],
     };
   },
   methods: {
@@ -105,11 +117,15 @@
         type: 'game_start_request'
       }
       this.sendMessage(JSON.stringify(msg));
-
     },
     stopTimer(){
       this.turnRunning = false;
     },
+    getDirectoryAboveFilename(filePath: string) {
+      const normalizedPath = filePath.replace(/\\/g, '/');
+      const parts = normalizedPath.split('/');
+      return parts.length > 1 ? parts[parts.length - 2] : '';
+  }
   },
   setup() {
     const websocketState = inject<WebSocketState>('websocketState');
@@ -118,23 +134,50 @@
     if (!websocketState || !sendMessage) {
       throw new Error('WebSocket state function not provided');
     }
-    console.log('lobbyMembers:', websocketState.lobbyMembers);
-    console.log('lobbyCode:', websocketState.lobbyCode);
-    const isHost = computed(() => websocketState.lobbyHost == websocketState.name)
-    const lobbyMembers = computed(() => websocketState.lobbyMembers)
-    const lobbyCode = computed(() => websocketState.lobbyCode)
 
+    const isHost = computed(() => websocketState.lobbyHost === websocketState.name);
+    const lobbyMembers = computed(() => websocketState.lobbyMembers);
+    const lobbyCode = computed(() => websocketState.lobbyCode);
     const turnRunning = computed(() => websocketState.turnRunning);
     const turnEnded = computed(() => websocketState.turnEnded);
     const turnNumber = computed(() => websocketState.turnNumber);
 
+    const audioFiles = ref<string[]>([]);
+
+    const finalAudioFiles = ref<string[][]>([]);
+
+    // Establish WebSocket connection and event listener
+    const socket = websocketState.socket;
+
+    if (!socket ) {
+      throw new Error('socket not provided');
+    }
+
+    socket.addEventListener('message', (event: MessageEvent) => {
+      const messageObj = JSON.parse(event.data);
+
+      if (messageObj.type === 'audio_files' && Array.isArray(messageObj.filenames)) {
+          audioFiles.value = messageObj.filenames;
+          finalAudioFiles.value = [];
+          console.log("Received audio files:", audioFiles.value);
+      }
+
+      if (messageObj.type === 'final_audio_files' && Array.isArray(messageObj.filenames)) {
+          audioFiles.value = [];
+          finalAudioFiles.value = messageObj.filenames;  // Set the received array directly
+          console.log("Received final audio files:", finalAudioFiles.value);
+      }
+    });
+
     return {
-      lobbyMembers: lobbyMembers,
-      lobbyCode: lobbyCode,
-      isHost: isHost,
-      turnRunning: turnRunning,
-      turnEnded: turnEnded,
-      turnNumber: turnNumber,
+      audioFiles,
+      finalAudioFiles,
+      lobbyMembers,
+      lobbyCode,
+      isHost,
+      turnRunning,
+      turnEnded,
+      turnNumber,
       sendMessage
     };
   },
@@ -146,25 +189,7 @@
       }
     }
   },
-  computed: {
-    audioFileName(): string | null {
-      return this.audioFile ? this.audioFile.split('/').pop() : null;
-    }
-  },
-  mounted() {
-    const socket = this.websocketState.socket;
-    socket.addEventListener('message', (event: MessageEvent) => {
-      const messageObj = JSON.parse(event.data);
-
-      if (messageObj.type === 'audio_file') {
-        this.audioFile = messageObj.filename; 
-        console.log("got audio file: " + this.audioFile)
-      }
-    });
-  }
-      
-
-  });
+});
 </script>
 
 <style scoped>
