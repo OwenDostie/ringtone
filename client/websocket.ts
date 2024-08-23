@@ -49,7 +49,6 @@ function getSessionData() {
 }
 
 function connectWebsocket() {
-    const wsUri = "ws://127.0.0.1/";
     const router = useRouter();
     const route = useRoute();
 
@@ -61,7 +60,12 @@ function connectWebsocket() {
     const sessionData = getSessionData();
     const sessionId = sessionData.sessionId;
     console.log("tryna establisdh ws connection with sessin id " + sessionId)
-    const socket = new WebSocket(`ws://localhost:80/socket?sessionId=${sessionId}`);
+
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const hostname = window.location.hostname;
+    const port = window.location.port ? `:${window.location.port}` : '';
+    const wsUri = `${protocol}://${hostname}${port}/socket?sessionId=${sessionId}`;
+    const socket = new WebSocket(wsUri);
 
     socket.onopen = (e) => {
       console.log("CONNECTED");
