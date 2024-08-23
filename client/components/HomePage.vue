@@ -1,14 +1,12 @@
 <template>
-  <h2>RINGTONE</h2>
   <div :class="{ shake: invalidName }">
-    <label for="fname">Enter your name:</label>
-    <input v-model="userName" type="text" id="fname" name="fname">
-    <br>
-    <br>
+    <h1>ringtone</h1>
+    <label for="fname">Your Name</label>
+    <input v-model="userName" type="text" id="fname" name="fname" style="transform: scale(1.5);"><br><br>
   </div>
   <div :class="{ shake: invalidLobbyCode }">
-    <label for="clientLobbyCode">Enter the lobby code:</label>
-    <input v-model="clientLobbyCode" type="text" id="clientLobbyCode" name="clientLobbyCode"><br><br>
+    <label for="clientLobbyCode">Lobby Code</label>
+    <input v-model="clientLobbyCode" type="text" id="clientLobbyCode" name="clientLobbyCode" style="transform: scale(1.5);"><br><br>
   </div>
   <div style="display: flex; justify-content: space-around;">
     <button @click="onClickJoinLobby" type="button" :disabled="invalidName || invalidLobbyCode">Join Lobby! </button>
@@ -21,7 +19,6 @@
 
 <script lang="ts">
 import { defineComponent, ref, watch, inject, computed } from 'vue'
-import { useRouter } from 'vue-router' // Import the router function
 import { WebSocketState } from '../websocket' // Adjust the import path as needed
 
 export default defineComponent({

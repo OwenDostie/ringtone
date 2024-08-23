@@ -24,12 +24,12 @@ const mimeTypes: Record<string, string> = {
   ".mp3": "audio/mpeg",
 };
 
-const staticDir = fromFileUrl(new URL("../dist/", import.meta.url));
-const uploadDir = './uploads'; // Directory where files will be uploaded
+const staticDir = fromFileUrl(new URL("../dist/", import.meta.url))
+const uploadDir = './uploads' // Directory where files will be uploaded
 
-let lobby_list: LobbyList = new LobbyList();
-let user_sockets = new Map<string, WebSocket | null>();
-let user_session_ids = new Map<string, User>();
+let lobby_list: LobbyList = new LobbyList()
+let user_sockets = new Map<string, WebSocket | null>()
+let user_session_ids = new Map<string, User>()
 
 export async function mkdir_if_ne(directory: string) {
   await Deno.mkdir(directory, { recursive: true }).catch((error) => {
@@ -49,7 +49,7 @@ function setSessionCookie(headers: Headers, sessionId: string, lobbyId?: string,
     httpOnly: true,
     secure: true, 
     sameSite: "None",
-  });
+  })
 
   if (lobbyId) {
     setCookie(headers, {
@@ -58,7 +58,7 @@ function setSessionCookie(headers: Headers, sessionId: string, lobbyId?: string,
       httpOnly: true,
       secure: true, 
       sameSite: "None", 
-    });
+    })
   }
   if (username)  {
     setCookie(headers, {
@@ -67,23 +67,24 @@ function setSessionCookie(headers: Headers, sessionId: string, lobbyId?: string,
       httpOnly: true,
       secure: true,
       sameSite: "None", 
-    });
+    })
   }
 }
 
 serve(async (request) => {
-  const url = new URL(request.url);
-  let pathname = url.pathname;
+  const url = new URL(request.url)
+  let pathname = url.pathname
 
-  const cookies = getCookies(request.headers);
-  let sessionId = cookies.sessionId;
-  console.log("session id is " + sessionId);
-  let user: User;
+  const cookies = getCookies(request.headers)
+  console.log(cookies)
+  let sessionId = cookies.sessionId
+  console.log("session id is " + sessionId)
+  let user: User
 
   if (!sessionId) {
-    sessionId = uuid.v1.generate();
+    sessionId = uuid.v1.generate()
 
-    user = new User();
+    user = new User()
     user.id = sessionId;
 
     user_sockets.set(user.id, null); 
