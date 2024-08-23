@@ -1,47 +1,13 @@
 # ringtone
+A web-based game for making music *together* (on the internet).
 
-## get dependencies
-install deno
+## Setup
+- [Clone](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) the repository
+- [Install Deno](https://docs.deno.com/runtime/manual/getting_started/installation/)
+- Install Denon (optional for hot reload) `deno install -qAf --unstable https://deno.land/x/denon/denon.ts`
 
-install denon for hot reloading
-`deno install -qAf --unstable https://deno.land/x/denon/denon.ts`
-## How to run the server
-```
-deno task start
-```
-
-## How to build + run image w/ docker
-```
-docker build -t ringtone .
-docker run --rm -it -p 80:80 ringtone
-deno task start
-```
-
-## How to host in google compute
-Create a repository in docker hub. There are other ways of registering a container but this is a simple one. It has to be public if it's on docker hub.
-
-Tag image and link to repository name (ours is ringtone)
-`docker tag ringtone owendostie/ringtone:latest`
-
-Push image to repository
-`docker push owendostie/ringtone:latest`
-
-Create the free-tier google compute instance and link the public url of the docker image. 
-
-Run the VM from the google cloud console, ssh in, and then `deno task start`
-
-## stack
-- runtime - deno
-- front end: vue
-- websocket
-- tone.js
-
-## requirements
-- cross-platform server setup w/ deno
-- single server process handles rooms and active games
-- client side lobby ux for room code + username + pick game mode + see other players
-- client side midi daw w/ playback, editing, saving
-- way of transferring midi files from client to server and vice versa. with maybe project file metadata
+## Run Server (Locally)
+`deno task start`, `deno task dev` or `deno task dev-unix`
 
 ## would be nice
 - tsl on websocket aka wss
@@ -71,14 +37,6 @@ deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
 ```
 
 ## owen todo
-### docker
-- pick a cloud provider/ecosystem
-    - google compute engine offers 1 free instance of e2 micro in certain regions / month and 30gb disk 
-    - https://cloud.google.com/free/docs/compute-getting-started
-- test web server there
-- create database/file store locally
-    - sync behavior so that files are copied to one of our local machine (incase image dies etc.). We can grab the json metadata also. 
-- ffmpeg for client-side audio conversion
 
 ### misc 
 - unselectable text
@@ -86,7 +44,7 @@ deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
 - docker
 
 ## known bugs
-when you joikjn a lobby from the same browser/ new tab, it will show two of the secon'd tabs user 
+when you join a lobby from the same browser/ new tab, it will show two of the secon'd tabs user 
 lobby explodes if the only person in it refreshes
 open in incognito is a white screen initially
 audio player is working weirdly / not really working on owens' computer 
