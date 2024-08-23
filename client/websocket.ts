@@ -48,6 +48,11 @@ export interface WebSocketState {
     console.log("Session ID:", cookies.sessionId);
     console.log("Lobby ID:", cookies.lobbyId);
     console.log("Username:", cookies.username);
+
+    if (!cookies.sessionId){
+      document.cookie = "testCookie=testValue; path=/";
+      console.log("test cookie: " + document.cookie); // Check if this logs the correct cookie
+    }
   
     return {
       sessionId: cookies.sessionId || null,
@@ -66,10 +71,10 @@ function connectWebsocket() {
   }
 
 
+const maxRetries = 5;  // Maximum number of retry attempts
+let retryCount = 0;
 function attemptConnection() {
 
-  const maxRetries = 5;  // Maximum number of retry attempts
-  let retryCount = 0;
     const sessionData = getSessionData();
 
     if (!sessionData.sessionId) {

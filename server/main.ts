@@ -41,12 +41,10 @@ export async function mkdir_if_ne(directory: string) {
   })
 }
 
-// Example of setting the cookie with additional data
 function setSessionCookie(headers: Headers, sessionId: string, lobbyId?: string, username?: string) {
   setCookie(headers, {
     name: "sessionId",
     value: sessionId,
-    httpOnly: true,
     secure: true, 
     sameSite: "None",
   });
@@ -55,7 +53,6 @@ function setSessionCookie(headers: Headers, sessionId: string, lobbyId?: string,
     setCookie(headers, {
       name: "lobbyId",
       value: lobbyId,
-      httpOnly: true,
       secure: true, 
       sameSite: "None", 
     });
@@ -64,13 +61,11 @@ function setSessionCookie(headers: Headers, sessionId: string, lobbyId?: string,
     setCookie(headers, {
       name: "username",
       value: username,
-      httpOnly: true,
       secure: true,
       sameSite: "None", 
     });
   }
 }
-
 serve(async (request) => {
   const url = new URL(request.url);
   let pathname = url.pathname;
