@@ -49,7 +49,7 @@ function getSessionData() {
   };
 }
 
-function connectWebSocket() {
+function connectWebsocket() {
   const router = useRouter();
   const route = useRoute();
 
