@@ -10,6 +10,26 @@ install denon for hot reloading
 deno task start
 ```
 
+## How to build + run image w/ docker
+```
+docker build -t ringtone .
+docker run --rm -it -p 80:80 ringtone
+deno task start
+```
+
+## How to host in google compute
+Create a repository in docker hub. There are other ways of registering a container but this is a simple one. It has to be public if it's on docker hub.
+
+Tag image and link to repository name (ours is ringtone)
+`docker tag ringtone owendostie/ringtone:latest`
+
+Push image to repository
+`docker push owendostie/ringtone:latest`
+
+Create the free-tier google compute instance and link the public url of the docker image. 
+
+Run the VM from the google cloud console, ssh in, and then `deno task start`
+
 ## stack
 - runtime - deno
 - front end: vue
@@ -45,11 +65,22 @@ deno task start
     - this also says if you run this command you can create a template project with ANY FRONTEND FRAMEOWKR
 - do more player orders than just a circle
 
+- docker examples - https://github.com/docker/awesome-compose
 ```
 deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
 ```
 
 ## owen todo
+### docker
+- pick a cloud provider/ecosystem
+    - google compute engine offers 1 free instance of e2 micro in certain regions / month and 30gb disk 
+    - https://cloud.google.com/free/docs/compute-getting-started
+- test web server there
+- create database/file store locally
+    - sync behavior so that files are copied to one of our local machine (incase image dies etc.). We can grab the json metadata also. 
+- ffmpeg for client-side audio conversion
+
+### misc 
 - unselectable text
 - dark mode stuff
 - docker
