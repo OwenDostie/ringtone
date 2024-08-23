@@ -32,22 +32,29 @@ export interface WebSocketState {
     err: '',
   });
 
-
-function getSessionData() {
-  const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
-    const [name, value] = cookie.split('=');
-    acc[name] = decodeURIComponent(value);
-    return acc;
-  }, {});
-
-  console.log("cookies: " + cookies.sessionId + ", " + cookies.lobbyId + ", " + cookies.username);
-
-  return {
-    sessionId: cookies.sessionId || null,
-    lobbyId: cookies.lobbyId || null,
-    username: cookies.username || null,
-  };
-}
+  function getSessionData() {
+    const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
+      const [name, value] = cookie.split('=');
+      
+      // Ensure both name and value are present
+      if (name && value) {
+        acc[name] = decodeURIComponent(value);
+      }
+      
+      return acc;
+    }, {});
+  
+    console.log("All cookies:", cookies);
+    console.log("Session ID:", cookies.sessionId);
+    console.log("Lobby ID:", cookies.lobbyId);
+    console.log("Username:", cookies.username);
+  
+    return {
+      sessionId: cookies.sessionId || null,
+      lobbyId: cookies.lobbyId || null,
+      username: cookies.username || null,
+    };
+  }
 
 function connectWebsocket() {
   const router = useRouter();
