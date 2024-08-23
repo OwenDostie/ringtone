@@ -9,6 +9,8 @@ A web-based game for making music *together* (on the internet).
 ## Run Server (Locally)
 `deno task start`, `deno task dev` or `deno task dev-unix`
 
+These are all some form of alias for `deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest`, see [deno.json](deno.json) or [denon.json](denon.json) for details.
+
 ## would be nice
 - tsl on websocket aka wss
 - front-end framework
