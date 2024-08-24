@@ -184,19 +184,16 @@
     const messageObj = JSON.parse(event.data);
 
     if (messageObj.type === 'audio_files' && Array.isArray(messageObj.filenames)) {
-      console.log("Received audio files from server:", messageObj.filenames);
-      // Assuming messageObj.filenames contains an array of filenames with full paths like `uploads/...`
-      audioFiles.value = messageObj.filenames.map(file => `https://storage.googleapis.com/ringtone-storage-omar/${file}`);
-      finalAudioFiles.value = [];
+        console.log("Received audio files from server:", messageObj.filenames);
+        audioFiles.value = messageObj.filenames;
+        finalAudioFiles.value = [];
     }
+
     if (messageObj.type === 'final_audio_files' && Array.isArray(messageObj.filenames)) {
-      console.log("Received final audio files from server:", messageObj.filenames);
-      audioFiles.value = [];
-      // Assuming messageObj.filenames is an array of arrays, where each sub-array contains file paths
-      finalAudioFiles.value = messageObj.filenames
-          .filter(fileArray => Array.isArray(fileArray) && fileArray.length > 0)
-          .map(fileArray => fileArray.map(file => `https://storage.googleapis.com/ringtone-storage-omar/${file}`));
-}
+        console.log("Received final audio files from server:", messageObj.filenames);
+        audioFiles.value = [];
+        finalAudioFiles.value = messageObj.filenames.filter(fileArray => Array.isArray(fileArray) && fileArray.length > 0);
+    }
 });
 
     return {
