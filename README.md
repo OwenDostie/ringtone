@@ -94,3 +94,8 @@ home screen inputs shake upon first load
 no joining when the game is ongoing or that names already in there
 shouldn't upload before starting
 shouldn't upload multipelt imes
+
+
+downlad button not showing
+check mark appearing after first person uplaods
+turn number not increasing after first turn

@@ -55,10 +55,10 @@
           <div class="start-button" v-if="isHost && turnNumber == 0">
             <button @click="onClickStart" type="button">start game</button><br>
           </div>
-          <div class="start-button" v-if="isHost && turnNumber != 0 && turnNumber < lobbyMembers.length && !turnEnded">
+          <div class="start-button" v-if="isHost && turnNumber != 0 && turnNumber < lobbyMembers.length && turnEnded">
             <button @click="onClickStart" type="button">start turn {{ turnNumber + 1 }}</button><br>
           </div>
-          <div class="start-button" v-if="isHost && turnNumber >= lobbyMembers.length">
+          <div class="start-button" v-if="isHost && turnNumber >= lobbyMembers.length && turnEnded">
             <button @click="onClickNewGame" type="button">new game</button><br>
           </div>
         </div>

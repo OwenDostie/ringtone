@@ -175,7 +175,7 @@ export class Lobby {
             this.game.set_turn_lengths(turnLengths)
         } else if (this.game.turn == 0) {
             console.log("setting turn lengths to 5s");
-            this.game.set_turn_lengths(new Array(this.user_list.length).fill(5)) // 5 second default
+            this.game.set_turn_lengths(new Array(this.user_list.length).fill(8 * 60)) // 8 min default
         }
 
         this.game.set_num_players(this.user_list.length);
