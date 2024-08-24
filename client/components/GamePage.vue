@@ -20,8 +20,8 @@
           <ul>
             <li v-for="member in lobbyMembers" :key="member" class="lobby-member">
               {{ member }}
-              <span v-if="submittedFile" class="check-mark">✔️</span>
-              <span v-if="isHost" class="crown">👑</span>
+              <span v-if="member == usernmae && submittedFile" class="check-mark">✔️</span>
+              <span v-if="member == lobbyHost" class="crown">👑</span>
             </li>
           </ul>
 
@@ -162,11 +162,13 @@
     }
 
     const isHost = computed(() => websocketState.lobbyHost === websocketState.name);
+    const lobbyHost = computed(() => websocketState.lobbyHost);
     const lobbyMembers = computed(() => websocketState.lobbyMembers);
     const lobbyCode = computed(() => websocketState.lobbyCode);
     const turnRunning = computed(() => websocketState.turnRunning);
     const turnEnded = computed(() => websocketState.turnEnded);
     const turnNumber = computed(() => websocketState.turnNumber);
+    const username = computed(() => websocketState.name);
 
     const audioFiles = ref<string[]>([]);
     const timerRef = ref(null);
@@ -200,9 +202,11 @@
       timerRef,
       audioFiles,
       finalAudioFiles,
+      lobbyHost,
       lobbyMembers,
       lobbyCode,
       isHost,
+      username,
       turnRunning,
       turnEnded,
       turnNumber,
