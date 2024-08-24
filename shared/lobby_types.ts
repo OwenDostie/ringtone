@@ -292,12 +292,12 @@ export class Lobby {
         const fileExt = fileNameArr[1];
         let objectKey;
         if (this.game.turn == 1) {
-            objectKey = `${this.directory}/${sanitizedFileName}`;
+            objectKey = `${this.directory}/game/${sanitizedFileName}`;
             this.game.subDirectories.set(user.name, sanitizedFileName);
             console.log(user.name + " setting subdirectory: " + this.game.subDirectories.get(user.name));
             this.game.turnSequences.set(user.name, []);
         } else {
-            objectKey = `${this.directory}/${this.game.turnSequences.get(user.name)![this.game.turn - 1]}`;
+            objectKey = `${this.directory}/game/${this.game.turnSequences.get(user.name)![this.game.turn - 1]}`;
         }
 
         const fullObjectKey = `${objectKey}/${this.game.turn}_${user.name}.${fileExt}`;
