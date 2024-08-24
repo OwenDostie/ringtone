@@ -285,53 +285,77 @@ export class Lobby {
             console.log("name: " + user.name + "\t id: " + user.id + "\n");
         }
     }
-
     async submit_file(user: User, file: File, socket_map: Map<string, WebSocket | null>) {
         const fileNameArr = file.name.replace(/\s+/g, '').split('.');
         const sanitizedFileName = fileNameArr[0];
         const fileExt = fileNameArr[1];
         let objectKey;
+    
         if (this.game.turn == 1) {
             objectKey = `${this.directory}/game/${sanitizedFileName}`;
             this.game.subDirectories.set(user.name, sanitizedFileName);
-            console.log(user.name + " setting subdirectory: " + this.game.subDirectories.get(user.name));
+            console.log(`${user.name} setting subdirectory: ${this.game.subDirectories.get(user.name)}`);
             this.game.turnSequences.set(user.name, []);
         } else {
             objectKey = `${this.directory}/game/${this.game.turnSequences.get(user.name)![this.game.turn - 1]}`;
         }
-
+    
         const fullObjectKey = `${objectKey}/${this.game.turn}_${user.name}.${fileExt}`;
-
+    
+        console.log(`Preparing to upload file for user ${user.name}`);
+        console.log(`File name: ${file.name}`);
+        console.log(`Sanitized file name: ${sanitizedFileName}`);
+        console.log(`Full object key: ${fullObjectKey}`);
+    
         try {
             const arrayBuffer = await file.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
-
+    
             const gcFile = bucket.file(fullObjectKey);
-            const writeStream = gcFile.createWriteStream({
-                resumable: false,
-                contentType: file.type,
+    
+            // Wrap the upload in a Promise to ensure we wait for the upload to finish
+            await new Promise<void>((resolve, reject) => {
+                const writeStream = gcFile.createWriteStream({
+                    resumable: false,
+                    contentType: file.type,
+                });
+    
+                writeStream.on("finish", async () => {
+                    console.log(`File uploaded successfully to Google Cloud Storage: ${fullObjectKey}`);
+    
+                    // Immediately check if the file is available in the bucket
+                    try {
+                        const [files] = await bucket.getFiles({ prefix: fullObjectKey });
+                        if (files.length > 0) {
+                            console.log(`Uploaded file found in bucket: ${files[0].name}`);
+                        } else {
+                            console.error(`Uploaded file not found in bucket for key: ${fullObjectKey}`);
+                        }
+                    } catch (checkError) {
+                        console.error(`Error checking file in bucket after upload: ${checkError}`);
+                    }
+    
+                    resolve(); // Resolve the promise when upload is complete
+                });
+    
+                writeStream.on("error", (err) => {
+                    console.error("Error during file upload:", err);
+                    reject(err); // Reject the promise if an error occurs
+                });
+    
+                writeStream.end(uint8Array);
             });
-
-            writeStream.on("finish", () => {
-                console.log(`File uploaded successfully to Google Cloud Storage: ${fullObjectKey}`);
-            });
-
-            writeStream.on("error", (err) => {
-                console.error("Error during file upload:", err);
-            });
-
-            writeStream.end(uint8Array); 
-
+    
             this.game.submitted_files.set(user.id, fullObjectKey);
-
+    
             if (this.game.all_users_submitted(this.user_list)) {
                 console.log("All users have submitted! Turn: " + this.game.turn);
                 if (this.game.turn == this.game.numPlayers) {
                     console.log("Game is over! Broadcasting final files");
-                    this.broadcast_audio_files(socket_map);
+                    await this.broadcast_audio_files(socket_map); // Ensure broadcasting happens after upload
                 } else {
                     console.log("Passing file to next person");
-                    this.pass_audio_files(socket_map);
+                    await this.pass_audio_files(socket_map); // Ensure file passing happens after upload
                 }
                 this.broadcast_game_end(socket_map);
             }
@@ -339,6 +363,7 @@ export class Lobby {
             console.error("Upload failed:", error);
         }
     }
+    
     async getAllFilesInSubDirectory(subdirectory: string): Promise<string[]> {
         const files: string[] = [];
         const subdirectoryPath = join(this.game.directory, subdirectory);
