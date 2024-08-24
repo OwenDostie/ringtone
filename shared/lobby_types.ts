@@ -355,7 +355,7 @@ export class Lobby {
         let fileUrls: string[][] = [];
     
         const fileUrlsPromises = Array.from(this.game.subDirectories.values()).map(async (subdirectory) => {
-            const folderUrl = `${this.directory}/${subdirectory}`;
+            const folderUrl = `${this.directory}/game/${subdirectory}`;
             console.log(`Looking for files in folder: ${folderUrl}`);
             const [files] = await bucket.getFiles({ prefix: folderUrl });
     
@@ -382,7 +382,7 @@ export class Lobby {
         this.user_list.forEach(async user => {
             const socket = socket_map.get(user.id);
     
-            const folderUrl = `${this.directory}/${this.game.turnSequences.get(user.name)![this.game.turn]}`;
+            const folderUrl = `${this.directory}/game/${this.game.turnSequences.get(user.name)![this.game.turn]}`;
             console.log(`Looking for files to pass in folder: ${folderUrl}`);
             const [files] = await bucket.getFiles({ prefix: folderUrl });
     
