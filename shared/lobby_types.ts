@@ -159,7 +159,7 @@ export class Lobby {
         this.user_list = [];
         this.add_user(host);
         this.code = this.generateLobbyCode();
-        this.directory = `./uploads/${this.code}`
+        this.directory = `uploads/${this.code}`
         this.game = new ServerGame();
         this.game.set_directory(join(this.directory, 'game'))
     }
