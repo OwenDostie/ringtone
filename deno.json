@@ -3,7 +3,7 @@
     "dev": "powershell -Command \"Start-Process 'deno' -ArgumentList 'run -A --node-modules-dir npm:vite'; Start-Process 'denon' -ArgumentList 'run -A --node-modules-dir server/main.ts'\"",
     "vite": "deno run -A --node-modules-dir npm:vite",
     "build": "deno run -A --node-modules-dir npm:vite build",
-    "serve": "deno run -A --node-modules-dir server/main.ts",
+    "serve": "deno run --env -A --node-modules-dir server/main.ts",
     "start": "deno task build && deno task serve"
   },
   "deploy": {

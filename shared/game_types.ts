@@ -1,6 +1,8 @@
 import { Lobby, User } from "./lobby_types.ts"
 import { join } from "https://deno.land/std@0.167.0/path/mod.ts";
 import { mkdir_if_ne } from "../server/main.ts";
+import { Storage } from "npm:@google-cloud/storage";
+
 export interface GameInterface {
     numPlayers: number;
     turn: number;
@@ -8,6 +10,15 @@ export interface GameInterface {
     running: boolean;
     turnRunning: boolean;
 }
+// Initialize Google Cloud Storage client
+const serviceAccountJson = Deno.env.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON");
+if (!serviceAccountJson) {
+throw new Error("Google Cloud service account JSON is not set in environment variables");
+}
+
+const serviceAccount = JSON.parse(serviceAccountJson);
+const storage = new Storage({ credentials: serviceAccount });
+const bucket = storage.bucket("ringtone-storage-omar");
 
 export class ServerGame implements GameInterface {
     numPlayers: number = 0;
@@ -77,7 +88,6 @@ export class ServerGame implements GameInterface {
 
     set_directory(directory: string) {
         this.directory = directory
-        mkdir_if_ne(directory)
     }
 
     async getAllFiles(): Promise<string[]> {
@@ -94,27 +104,46 @@ export class ServerGame implements GameInterface {
         const fileNameArr = file.name.replace(/\s+/g, '').split('.');
         const sanitizedFileName = fileNameArr[0];
         const fileExt = fileNameArr[1];
-        console.log("file name sanitized:" + sanitizedFileName);
-        let filePath;
-    
-        if (this.turn === 1) {
-            filePath = join(this.directory, sanitizedFileName);
+        console.log("File name sanitized:" + sanitizedFileName + "\n turn:" + this.turn);
+
+        let objectKey;
+
+        if (this.turn == 1) {
+            objectKey = `${this.directory}/${sanitizedFileName}`;
             this.subDirectories.set(user.name, sanitizedFileName);
             console.log(user.name + " setting subdirectory: " + this.subDirectories.get(user.name));
             this.turnSequences.set(user.name, []);
-            mkdir_if_ne(filePath);  
         } else {
-            filePath = join(this.directory, this.turnSequences.get(user.name)![this.turn - 1]);
-            mkdir_if_ne(filePath);  
+            objectKey = `${this.directory}/${this.turnSequences.get(user.name)![this.turn - 1]}`;
         }
-    
-        const fullFilePath = join(filePath, `${this.turn}${user.name}.${fileExt}`);
-    
-        const arrayBuffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        await Deno.writeFile(fullFilePath, uint8Array);
-    
-        this.submitted_files.set(user.id, this.turnSequences.get(user.name)![this.turn - 1]);
+
+        const fullObjectKey = `${objectKey}/${this.turn}_${user.name}.${fileExt}`;
+
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            const gcFile = bucket.file(fullObjectKey);
+            const writeStream = gcFile.createWriteStream({
+                resumable: false,
+                contentType: file.type,
+            });
+
+            writeStream.on("finish", () => {
+                console.log(`File uploaded successfully to Google Cloud Storage: ${fullObjectKey}`);
+            });
+
+            writeStream.on("error", (err) => {
+                console.error("Error during file upload:", err);
+                // Additional error handling logic if needed
+            });
+
+            writeStream.end(uint8Array); // End the stream after writing the data
+
+            this.submitted_files.set(user.id, fullObjectKey);
+        } catch (error) {
+            console.error("Upload failed:", error);
+        }
     }
     all_users_submitted(user_list: User[]): boolean {
         let ret_val = user_list.every(user => {

@@ -2,6 +2,7 @@ import * as uuid from "jsr:@std/uuid";
 import { join, extname } from "https://deno.land/std/path/mod.ts"
 import { existsSync } from "https://deno.land/std/fs/mod.ts";
 import { ServerGame } from "./game_types.ts";
+import { Storage } from "npm:@google-cloud/storage";
 
 async function getFilesStartingWithNumber(directory: string, number: string): Promise<string[]> {
     const files = [];
@@ -133,6 +134,15 @@ export class LobbyList {
         return ret_val;
     }
 }
+
+// Initialize Google Cloud Storage client
+const serviceAccountJson = Deno.env.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON");
+if (!serviceAccountJson) {
+throw new Error("Google Cloud service account JSON is not set in environment variables");
+}
+const serviceAccount = JSON.parse(serviceAccountJson);
+const storage = new Storage({ credentials: serviceAccount });
+const bucket = storage.bucket("ringtone-storage-omar");
 
 export class Lobby {
     readonly lobbyCodeLength = 4;
@@ -277,23 +287,58 @@ export class Lobby {
     }
 
     async submit_file(user: User, file: File, socket_map: Map<string, WebSocket | null>) {
-        await this.game.submit_file(user, file);
-
-        if (this.game.all_users_submitted(this.user_list)) {
-            console.log("all users have submitted! turn: " + this.game.turn);
-            if (this.game.turn == this.game.numPlayers) {
-                console.log("Game is over! broadcasting final files")
-                this.broadcast_audio_files(socket_map);
-
-            } else {
-                console.log("passing file to next person")
-                this.pass_audio_files(socket_map);
-            }
-            this.broadcast_game_end(socket_map)
+        const fileNameArr = file.name.replace(/\s+/g, '').split('.');
+        const sanitizedFileName = fileNameArr[0];
+        const fileExt = fileNameArr[1];
+        let objectKey;
+        if (this.game.turn == 1) {
+            objectKey = `${this.directory}/${sanitizedFileName}`;
+            this.game.subDirectories.set(user.name, sanitizedFileName);
+            console.log(user.name + " setting subdirectory: " + this.game.subDirectories.get(user.name));
+            this.game.turnSequences.set(user.name, []);
+        } else {
+            objectKey = `${this.directory}/${this.game.turnSequences.get(user.name)![this.game.turn - 1]}`;
         }
-    }    
 
-    // You would also need a helper method in your `ServerGame` class:
+        const fullObjectKey = `${objectKey}/${this.game.turn}_${user.name}.${fileExt}`;
+
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const uint8Array = new Uint8Array(arrayBuffer);
+
+            const gcFile = bucket.file(fullObjectKey);
+            const writeStream = gcFile.createWriteStream({
+                resumable: false,
+                contentType: file.type,
+            });
+
+            writeStream.on("finish", () => {
+                console.log(`File uploaded successfully to Google Cloud Storage: ${fullObjectKey}`);
+            });
+
+            writeStream.on("error", (err) => {
+                console.error("Error during file upload:", err);
+            });
+
+            writeStream.end(uint8Array); 
+
+            this.game.submitted_files.set(user.id, fullObjectKey);
+
+            if (this.game.all_users_submitted(this.user_list)) {
+                console.log("All users have submitted! Turn: " + this.game.turn);
+                if (this.game.turn == this.game.numPlayers) {
+                    console.log("Game is over! Broadcasting final files");
+                    this.broadcast_audio_files(socket_map);
+                } else {
+                    console.log("Passing file to next person");
+                    this.pass_audio_files(socket_map);
+                }
+                this.broadcast_game_end(socket_map);
+            }
+        } catch (error) {
+            console.error("Upload failed:", error);
+        }
+    }
     async getAllFilesInSubDirectory(subdirectory: string): Promise<string[]> {
         const files: string[] = [];
         const subdirectoryPath = join(this.game.directory, subdirectory);
@@ -309,43 +354,54 @@ export class Lobby {
     async broadcast_audio_files(socket_map: Map<string, WebSocket | null>) {
         let fileUrls: string[][] = [];
     
-        // Using map to get promises for all subdirectories
         const fileUrlsPromises = Array.from(this.game.subDirectories.values()).map(async (subdirectory) => {
-            console.log("checking subdirectory " + subdirectory);
-            return await this.getAllFilesInSubDirectory(subdirectory);
+            const folderUrl = `${this.directory}/${subdirectory}`;
+            console.log(`Looking for files in folder: ${folderUrl}`);
+            const [files] = await bucket.getFiles({ prefix: folderUrl });
+    
+            if (files.length === 0) {
+                console.warn(`No files found in folder: ${folderUrl}`);
+            } else {
+                console.log(`Found files: ${files.map(file => file.name).join(', ')}`);
+            }
+    
+            return files.map(file => `https://storage.googleapis.com/${bucket.name}/${file.name}`);
         });
     
-        // Await all promises
         fileUrls = await Promise.all(fileUrlsPromises);
     
-        console.log("final audio files: ", fileUrls);
+        console.log("Final audio files being sent to client: ", fileUrls);
     
-        // Broadcasting final_audio_files with correct structure
         this.broadcast(JSON.stringify({
             type: 'final_audio_files',
             filenames: fileUrls,
         }), socket_map);
     }
     
-
-
     async pass_audio_files(socket_map: Map<string, WebSocket | null>) {
         this.user_list.forEach(async user => {
             const socket = socket_map.get(user.id);
-
-            const folderUrl = this.game.directory + this.game.turnSequences.get(user.name)![this.game.turn]
-            const files = await getFilesStartingWithNumber(folderUrl, String(this.game.turn))
-
+    
+            const folderUrl = `${this.directory}/${this.game.turnSequences.get(user.name)![this.game.turn]}`;
+            console.log(`Looking for files to pass in folder: ${folderUrl}`);
+            const [files] = await bucket.getFiles({ prefix: folderUrl });
+    
+            if (files.length === 0) {
+                console.warn(`No files found in folder: ${folderUrl}`);
+            } else {
+                console.log(`Found files: ${files.map(file => file.name).join(', ')}`);
+            }
+    
             const message = {
                 type: 'audio_files',
-                filenames: files.map(file => folderUrl + '/' + file),
-            }
-
+                filenames: files.map(file => `https://storage.googleapis.com/${bucket.name}/${file.name}`),
+            };
+    
             if (socket) {
-                console.log(`found a socket for user ${user.name}, sending file url ${files}`);
+                console.log(`Sending file URLs to user ${user.name}: ${message.filenames.join(', ')}`);
                 socket.send(JSON.stringify(message));
             }
-        })
+        });
     }
 }
 

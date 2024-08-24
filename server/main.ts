@@ -5,6 +5,7 @@ import { fromFileUrl } from "https://deno.land/std/path/mod.ts"
 import { join, extname } from "https://deno.land/std/path/mod.ts"
 import { serve } from "https://deno.land/std@0.167.0/http/server.ts"
 import { mimeTypes } from "https://deno.land/std@0.167.0/media_types/mod.ts"
+import { Storage } from "npm:@google-cloud/storage";
 import { ChatMessage } from "../shared/lobby_types.ts"
 import moment from "npm:moment";
 
@@ -26,6 +27,15 @@ const mimeTypes: Record<string, string> = {
 
 const staticDir = fromFileUrl(new URL("../dist/", import.meta.url));
 const uploadDir = './uploads'; // Directory where files will be uploaded
+
+// Initialize Google Cloud Storage client
+const serviceAccountJson = Deno.env.get("GOOGLE_CLOUD_SERVICE_ACCOUNT_JSON");
+if (!serviceAccountJson) {
+  throw new Error("Google Cloud service account JSON is not set in environment variables");
+}
+const serviceAccount = JSON.parse(serviceAccountJson);
+const storage = new Storage({ credentials: serviceAccount });
+const bucket = storage.bucket("ringtone-storage-omar");
 
 let lobby_list: LobbyList = new LobbyList();
 let user_sockets = new Map<string, WebSocket | null>();

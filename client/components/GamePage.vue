@@ -132,7 +132,7 @@
       }
       this.sendMessage(JSON.stringify(msg));
     },
-    onClickNewGame(){
+    onClickNewGame() {
       const msg = {
         type: 'new_game_request'
       }
@@ -181,20 +181,20 @@
     }
 
     socket.addEventListener('message', (event: MessageEvent) => {
-      const messageObj = JSON.parse(event.data);
+    const messageObj = JSON.parse(event.data);
 
-      if (messageObj.type === 'audio_files' && Array.isArray(messageObj.filenames)) {
-          audioFiles.value = messageObj.filenames;
-          finalAudioFiles.value = [];
-          console.log("Received audio files:", audioFiles.value);
-      }
+    if (messageObj.type === 'audio_files' && Array.isArray(messageObj.filenames)) {
+        console.log("Received audio files from server:", messageObj.filenames);
+        audioFiles.value = messageObj.filenames;
+        finalAudioFiles.value = [];
+    }
 
-      if (messageObj.type === 'final_audio_files' && Array.isArray(messageObj.filenames)) {
-          audioFiles.value = [];
-          finalAudioFiles.value = messageObj.filenames;  // Set the received array directly
-          console.log("Received final audio files:", finalAudioFiles.value);
-      }
-    });
+    if (messageObj.type === 'final_audio_files' && Array.isArray(messageObj.filenames)) {
+        console.log("Received final audio files from server:", messageObj.filenames);
+        audioFiles.value = [];
+        finalAudioFiles.value = messageObj.filenames.filter(fileArray => Array.isArray(fileArray) && fileArray.length > 0);
+    }
+});
 
     return {
       timerRef,
