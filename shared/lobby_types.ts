@@ -87,38 +87,38 @@ export class LobbyList {
         }
     }
 
-
     async remove_user_from_lobby(user: User, lobby_code: string) {
         let success = false;
     
-        this.lobby_list = this.lobby_list.filter(async (lobby) => {
+        this.lobby_list = await Promise.all(this.lobby_list.filter(async (lobby) => {
             if (lobby.code === lobby_code) {
                 lobby.remove_user(user);
-                console.log(`removed user ${user.name} from lobby with code ${lobby.code}`);
+                console.log(`Removed user ${user.name} from lobby with code ${lobby.code}`);
                 success = true;
     
                 if (lobby.user_list.length === 0) {
-                    console.log(`lobby with code ${lobby.code} is empty and will be removed`);
+                    console.log(`Lobby with code ${lobby.code} is empty and will be removed`);
     
-                    // Delete the lobby's directory
-                    const lobbyDirectory = lobby.directory; // Assuming the lobby has a directory property
-                    if (lobbyDirectory && existsSync(lobbyDirectory)) {
-                        try {
-                            await Deno.remove(lobbyDirectory, { recursive: true });
-                            console.log(`lobby directory ${lobbyDirectory} has been deleted`);
-                        } catch (error) {
-                            console.error(`Failed to delete lobby directory ${lobbyDirectory}:`, error);
+                    try {
+                        const [files] = await bucket.getFiles({ prefix: `${lobby.directory}/` });
+                        if (files.length > 0) {
+                            await Promise.all(files.map(file => file.delete()));
+                            console.log(`All files for lobby ${lobby.code} have been deleted from Google Cloud Storage.`);
+                        } else {
+                            console.warn(`No files found in Google Cloud Storage for lobby ${lobby.code}.`);
                         }
+                    } catch (error) {
+                        console.error(`Failed to delete files from Google Cloud Storage for lobby ${lobby.code}:`, error);
                     }
     
-                    return false; // Remove the lobby from the list
+                    return false; 
                 }
             }
-            return true; // Keep the lobby in the list
-        });
+            return true; 
+        }).map(async promise => await promise));
     
         if (!success) {
-            console.log(`when removing, could not find lobby with code ${lobby_code}`);
+            console.log(`When removing, could not find lobby with code ${lobby_code}`);
         }
     }
 
