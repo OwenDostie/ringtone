@@ -165,6 +165,100 @@ serve(async (request) => {
       }
     }
   }
+  else if (request.method === "GET" && pathname.startsWith("/api/clips")) {
+    const url = new URL(request.url);
+    const songFolderPath = url.searchParams.get("songFolderPath");
+  
+    if (!songFolderPath) {
+      return new Response(
+        JSON.stringify({ error: 'Missing songFolderPath query parameter' }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  
+    try {
+      const files = await getFilesInFolder("saved/" + songFolderPath);
+      const clips = files.map(file => ({
+        name: file.name,
+        url: `https://storage.googleapis.com/${bucket.name}/${file.name}` 
+      }));
+      const jsonResponse = JSON.stringify(clips);
+      return new Response(jsonResponse, {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error('Error fetching clips:', error);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch clips' }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
+  else if (pathname === "/api/game-folders") {
+    try {
+      const folders = await getFoldersInBucket("saved/");
+      const jsonResponse = JSON.stringify(folders);
+      console.log('Folders response:', jsonResponse);
+      return new Response(jsonResponse, {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error('Error fetching folders:', error);
+      return new Response(JSON.stringify({ error: 'Failed to fetch folders' }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+  else if (request.method === "GET" && pathname.startsWith("/api/songs")) {
+    const url = new URL(request.url);
+    const folderPath = url.searchParams.get("folderPath");
+  
+    if (!folderPath) {
+      return new Response(
+        JSON.stringify({ error: 'Missing folderPath query parameter' }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  
+    try {
+      const folders = await getFoldersInBucket(`saved/${folderPath}/`);
+  
+      const jsonResponse = JSON.stringify(folders);
+      return new Response(jsonResponse, {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error('Error fetching songs:', error);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch songs' }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  }
+  if (request.method === "POST" && pathname === "/copy-files") {
+    console.log("Copy files request received");
+    const lobby = lobby_list.get_lobby_with_code(user.lobby_code);
+    if (!lobby) {
+      return new Response("Lobby not found", { status: 404 });
+    }
+    
+    const players = lobby.user_list.map((u) => u.name).join('_');
+    const timestamp = moment().format('YYYYMMDD_HHmmss');
+    const destFolder = `uploads/${timestamp}_${players}/`;
+    const songFolder = `uploads/${user.lobby_code}/`;
+
+    const files = await getFilesInFolder(songFolder);
+    for (const file of files) {
+      const destFilePath = `${destFolder}${file.name.split('/').pop()}`;
+      await copyFileInBucket(file.name, destFilePath);
+    }
+    console.log(`Files copied to ${destFolder}`);
+    return new Response("Files copied successfully!", { status: 200 });
+  }
 
   // If the request is a websocket upgrade,
   // we need to use the Deno.upgradeWebSocket helper
@@ -194,7 +288,7 @@ serve(async (request) => {
       user_sockets.set(user.id, socket);
     };
 
-    socket.onmessage = (event) => {
+    socket.onmessage = async (event) => {
       console.log(`RECEIVED: ${event.data}`);
       let message_obj = JSON.parse(event.data);
 
@@ -290,6 +384,20 @@ serve(async (request) => {
           // handle round end event
           break;
         }
+        case 'save_files': {
+          console.log("got save files request")
+          const lobby = lobby_list.get_lobby_with_code(user.lobby_code);
+          if (!lobby) {
+            console.log('No lobby found for user.');
+            return;
+          }
+        
+          const playerNames = lobby.user_list.map((user) => user.name);
+          await copyGameToSaved(user.lobby_code, playerNames);
+          
+          socket.send(JSON.stringify({ type: 'files_saved', success: true }));
+          break;
+        }
       }
     };
 
@@ -344,3 +452,66 @@ serve(async (request) => {
     }
   }
 }, { port: 80 });
+async function getFoldersInBucket(prefix: string) {
+  try {
+    const [files] = await bucket.getFiles({ prefix });
+    console.log('Retrieved files:', files.map(file => file.name));
+
+    // Determine the folder level based on the prefix length
+    const prefixLength = prefix.split('/').length;
+    console.log(`prefix length : ${prefixLength}`)
+
+    // Manually extract folder names from file paths
+    const folders = new Set<string>();
+    files.forEach(file => {
+      const parts = file.name.split('/');
+      if (parts.length > prefixLength - 1) {
+        console.log(`parts  : ${parts}`)
+        console.log(`mypart:  : ${parts[prefixLength - 1]}`)
+        folders.add(parts[prefixLength - 1]); // Extract folder at the level directly after the prefix
+      }
+    });
+
+    const extractedFolders = Array.from(folders);
+
+    console.log('Extracted folders:', extractedFolders);
+    return extractedFolders;
+  } catch (error) {
+    console.error('Error getting folders in bucket:', error);
+    return [];
+  }
+}
+
+async function getFilesInFolder(folderPath: string) {
+  const [files] = await bucket.getFiles({ prefix: folderPath });
+  return files.map(file => ({
+    name: file.name,
+    url: `https://storage.googleapis.com/${bucket.name}/${file.name}`,
+  }));
+}
+async function copyFileInBucket(sourceFilePath: string, destFilePath: string) {
+  const file = bucket.file(sourceFilePath);
+  await file.copy(bucket.file(destFilePath));
+  console.log(`File copied from ${sourceFilePath} to ${destFilePath}`);
+}
+async function copyGameToSaved(lobbyCode: string, playerNames: string[]) {
+  const timestamp = moment().format("YYYYMMDD_HHmmss");
+  const gameFolderName = `${timestamp}_${playerNames.join("_")}`;
+
+  const sourceFolder = `uploads/${lobbyCode}/game/`;
+  const targetFolder = `saved/${gameFolderName}/`;
+
+  console.log(`Copying all files from ${sourceFolder} to ${targetFolder}`);
+
+  const [files] = await bucket.getFiles({ prefix: sourceFolder });
+
+  const copyPromises = files.map(async (file) => {
+    const targetFileName = file.name.replace(sourceFolder, targetFolder);
+
+    const [copiedFile] = await file.copy(bucket.file(targetFileName));
+    console.log(`Copied ${file.name} to ${copiedFile.name}`);
+  });
+
+  await Promise.all(copyPromises);
+  console.log("All files successfully copied to the saved folder.");
+}

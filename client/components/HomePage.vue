@@ -3,19 +3,21 @@
   <div :class="{ shake: invalidName }">
     <label for="fname">Enter your name:</label>
     <input v-model="userName" type="text" id="fname" name="fname">
-    <br>
-    <br>
+    <br><br>
   </div>
   <div :class="{ shake: invalidLobbyCode }">
     <label for="clientLobbyCode">Enter the lobby code:</label>
     <input v-model="clientLobbyCode" type="text" id="clientLobbyCode" name="clientLobbyCode"><br><br>
   </div>
   <div style="display: flex; justify-content: space-around;">
-    <button @click="onClickJoinLobby" type="button" :disabled="invalidName || invalidLobbyCode">Join Lobby! </button>
-    <button @click="onClickHostLobby" type="button" :disabled="invalidName" >Host a Lobby! </button>
+    <button @click="onClickJoinLobby" type="button" :disabled="!isConnected || invalidName || invalidLobbyCode">Join Lobby!</button>
+    <button @click="onClickHostLobby" type="button" :disabled="!isConnected || invalidName">Host a Lobby!</button>
+    <router-link to="/songbrowser">
+      <button type="button" :disabled="!isConnected">Browse Songs</button>
+    </router-link>
   </div>
   <div v-if="lobbyCode != 'failed'">{{ joinLobbyFailureMessage }}</div>
-  <div v-else-if="lobbyCode == 'failed'"> {{ serverError }}</div>
+  <div v-else-if="lobbyCode == 'failed'">{{ serverError }}</div>
   <span>{{ hostLobbyFailureMessage }}</span>
 </template>
 
@@ -36,13 +38,12 @@ export default defineComponent({
     const hostLobbyFailureMessage = ref('')
     const joinLobbyFailureMessage = ref('')
 
-    // Asynchronously watch, constrain, & validate userName and clientLobbyCode
     watch(userName, (newValue) => {
       invalidName.value = newValue.trim() === ''
     })
     watch(clientLobbyCode, (newValue) => {
-      clientLobbyCode.value = newValue.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) // Constrain lobby code to [A-Z0-9], 4 characters
-      invalidLobbyCode.value = clientLobbyCode.value.length != 4 //4 character max
+      clientLobbyCode.value = newValue.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)
+      invalidLobbyCode.value = clientLobbyCode.value.length != 4
     })
 
     // Websocket stuff?
@@ -54,16 +55,17 @@ export default defineComponent({
     }
     const lobbyCode = computed(() => websocketState.lobbyCode)
     const serverError = computed(() => websocketState.err)
+    const isConnected = computed(() => websocketState.isConnected)
 
     function validateAction(action: 'join' | 'host'): string | undefined {
       let errorMessage: string | undefined = undefined
-      if (!websocketState.isConnected) { // Validate websocket connection
+      if (!websocketState.isConnected) {
         errorMessage = 'Can\'t ${action}, WebSocket is sus!'
       } 
-      else if (invalidName == true) { // Validate name
+      else if (invalidName == true) { 
         errorMessage = 'Can\'t ${action}, name is sus!'
       }
-      else if (invalidLobbyCode == true && action == 'join') { // Validate lobby code if joining
+      else if (invalidLobbyCode == true && action == 'join') {
         errorMessage = 'Can\'t ${action}, lobby code is sus!'
       }
       return errorMessage
@@ -101,6 +103,10 @@ export default defineComponent({
       sendMessage(JSON.stringify(msg));
     }  
 
+    function onClickBrowseSongs(): void {
+
+    }
+
     // Track or persist these variables or something
     return {
       userName,
@@ -113,6 +119,7 @@ export default defineComponent({
       hostLobbyFailureMessage,
       joinLobbyFailureMessage,
       serverError,
+      isConnected,
     }
   }
 })

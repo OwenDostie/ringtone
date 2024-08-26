@@ -30,6 +30,7 @@
               <div v-for="file in audioFiles" :key="file" class="audio-file">
                 <label>{{ getDirectoryAboveFilename(file) }}</label><br>
                 <audio :src="file" controls></audio>
+                <a :href="file" :download="getFilename(file)" class="download-button">Download</a>
               </div>
             </div>
 
@@ -61,6 +62,9 @@
           <div class="start-button" v-if="isHost && turnNumber >= lobbyMembers.length && turnEnded">
             <button @click="onClickNewGame" type="button">new game</button><br>
           </div>
+          <button @click="onClickSaveFiles" :disabled="!(turnNumber >= lobbyMembers.length && turnEnded)">
+            save 
+          </button>
         </div>
       </div>
     </div>
@@ -95,6 +99,13 @@
   methods: {
     handleFileUpload(event) {
       this.selectedFile = event.target.files[0];
+    },
+    onClickSaveFiles() {
+        const message = {
+          type: "save_files"
+        }
+        console.log("sending save files")
+        this.sendMessage(JSON.stringify(message));
     },
     async uploadFile() {
       if (!this.selectedFile ) {
