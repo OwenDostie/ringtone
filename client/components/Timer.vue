@@ -17,7 +17,7 @@ export default defineComponent({
     },
     startTime: {
       type: Number,
-      default: 5 * 1000,
+      default: 7 * 60 * 1000,
     },
   },
   watch: {

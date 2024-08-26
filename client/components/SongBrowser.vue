@@ -1,6 +1,6 @@
 <template>
   <div class="song-browser">
-    <h1>Past Ringtone Games:</h1>
+    <h1>past ringtone games:</h1>
     <ul class="folder-list">
       <li 
         v-for="folder in gameFolders" 
@@ -13,8 +13,8 @@
     </ul>
 
     <div v-if="selectedGameFolder">
-      <h2>Looking at Game: {{ selectedGameFolder }}</h2>
-      <h3>Songs:</h3>
+      <h2>looking at game: {{ selectedGameFolder }}</h2>
+      <h3>songs:</h3>
       <ul class="song-list">
         <li 
           v-for="song in songs" 
@@ -25,7 +25,7 @@
           {{ song }}
         </li>
         <div v-if="expandedSongFolder === selectedSong" class="clip-list">
-          <h4>Clips for {{ selectedSong }}:</h4>
+          <h4>clips for {{ selectedSong }}:</h4>
           <ul>
             <li v-for="clip in clips" :key="clip.name">
               <div> {{ clip.name }}</div>
