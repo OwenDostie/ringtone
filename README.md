@@ -99,3 +99,7 @@ shouldn't upload multipelt imes
 downlad button not showing
 check mark appearing after first person uplaods
 turn number not increasing after first turn
+
+FIX DOWNLOAD BUTTON IT LEAVES LOBBY
+LOBBY SOMETIMES JUST NOT FOUND??? OR CAM BEING DUMB
+DRAG AND DROP

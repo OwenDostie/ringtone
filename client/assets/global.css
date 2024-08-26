@@ -1,0 +1,163 @@
+
+body {
+    background-color: #08070C;
+    color: #E9F4EE; /* Default text color */
+    font-family: Arial, sans-serif; /* Set a default font-family */
+    margin: 0;
+    padding: 0;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    color: #50EAA4; /* Title text color */
+  }
+  
+  p, span, a, li {
+    color: #E9F4EE; /* Smaller text color */
+  }
+  
+  /* Borders and boxes */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  
+  a {
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline; /* Underline links on hover */
+  }
+  
+  /* Border color and box-shadow */
+  .border, .box, .card, .panel, .container, .section {
+    border: 1px solid #7C66FF; /* Border color */
+  }
+  
+  .box-shadow, .card, .panel {
+    box-shadow: 0 4px 8px rgba(124, 102, 255, 0.3); /* Box shadow color */
+  }
+  
+  /* Optional: If you have specific classes for borders and boxes, you can style them here */
+  .border {
+    border-color: #7C66FF;
+  }
+  
+  .box {
+    border: 2px solid #7C66FF;
+  }
+  
+  .card {
+    border: 2px solid #7C66FF;
+    box-shadow: 0 4px 8px rgba(124, 102, 255, 0.3); /* Box shadow color */
+  }
+  
+  .panel {
+    border: 2px solid #7C66FF;
+    box-shadow: 0 4px 8px rgba(124, 102, 255, 0.3); /* Box shadow color */
+  }
+  
+  .container {
+    border: 1px solid #7C66FF;
+  }
+  
+  /* Optional: Apply to specific elements if needed */
+  input, select, textarea {
+    border: 1px solid #7C66FF;
+  }
+  
+
+/* General Body Styles */
+body {
+    background-color: #08070C;
+    color: #E9F4EE;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Header Text Styles */
+  h1, h2, h3, h4, h5, h6 {
+    color: #50EAA4;
+  }
+  
+  .button {
+    background-color: #7c66ff; /* Slightly darker on hover */
+    border: 1px solid #6c61ac; /* Border color */
+    color: #E9F4EE; /* Text color */
+    padding: 10px 20px; /* Padding for button */
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s, border-color 0.3s; /* Smooth transition */
+  }
+  
+  .button:hover {
+    background-color: #4a41b1; /* Darker button color */
+  }
+  
+  .button:disabled {
+    background-color: #4a41b1; /* Slightly darker on hover */
+    border: 1px solid #7C66FF; /* Border color */
+    color: #808080; /* Text color for disabled state */
+    cursor: not-allowed; /* Change cursor to indicate disabled */
+  }
+
+  
+  /* Input Component Styles */
+  input {
+    background-color: #1A1A1A; /* Dark background for input fields */
+    color: #E9F4EE; /* Text color inside inputs */
+    border: 2px solid #7C66FF; /* Border color for inputs */
+    border-radius: 5px; /* Optional: rounded corners */
+    padding: 10px; /* Adjust as needed */
+    font-size: 16px;
+    transition: border-color 0.3s;
+  }
+  
+  input:focus {
+    border-color: #50EAA4; /* Border color when input is focused */
+    outline: none; /* Remove default focus outline */
+  }
+  input[type="file"] {
+    margin-bottom: 5px;
+    padding: 10px; /* Add padding to match button and other inputs */
+    border: 1px solid #ccc; /* Border color to match other elements */
+    border-radius: 5px; /* Rounded corners to match buttons */
+    background-color: #f9f9f9; /* Background color for better visibility */
+    color: #333; /* Text color for better readability */
+    font-size: 14px; /* Match font size with other elements */
+    cursor: pointer; /* Pointer cursor to indicate interactiveness */
+  }
+  
+  /* Optional: Style the label inside file input for better appearance */
+  input[type="file"]::-webkit-file-upload-button {
+    background-color: #4a41b1; /* Match button color */
+    border: 1px solid #6c61ac; /* Match button border color */
+    color: #E9F4EE; /* Match button text color */
+    padding: 10px 20px; /* Match button padding */
+    border-radius: 5px; /* Match button border radius */
+    cursor: pointer; /* Pointer cursor */
+    font-size: 14px; /* Match font size */
+  }
+  
+  /* Style for input field's placeholder */
+  input[type="file"]::-webkit-input-placeholder {
+    color: #808080; /* Placeholder text color */
+  }
+  
+  /* Additional Styles for Download Buttons */
+  .download-button {
+    background-color: #7C66FF; /* Border and box color */
+    color: #E9F4EE; /* Text color inside download buttons */
+    border: 2px solid #7C66FF; /* Border color matching button background */
+    border-radius: 5px; /* Optional: rounded corners */
+    padding: 10px 20px; /* Adjust as needed */
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+  
+  .download-button:hover {
+    background-color: #6B5BCE; /* Darker shade on hover */
+    border-color: #6B5BCE;
+  }

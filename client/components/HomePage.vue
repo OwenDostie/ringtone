@@ -9,11 +9,11 @@
     <label for="clientLobbyCode">Enter the lobby code:</label>
     <input v-model="clientLobbyCode" type="text" id="clientLobbyCode" name="clientLobbyCode"><br><br>
   </div>
-  <div style="display: flex; justify-content: space-around;">
-    <button @click="onClickJoinLobby" type="button" :disabled="!isConnected || invalidName || invalidLobbyCode">Join Lobby!</button>
-    <button @click="onClickHostLobby" type="button" :disabled="!isConnected || invalidName">Host a Lobby!</button>
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+    <button @click="onClickJoinLobby" type="button" :disabled="!isConnected || invalidName || invalidLobbyCode" class="button">Join Lobby!</button>
+    <button @click="onClickHostLobby" type="button" :disabled="!isConnected || invalidName" class="button">Host a Lobby!</button>
     <router-link to="/songbrowser">
-      <button type="button" :disabled="!isConnected">Browse Songs</button>
+      <button type="button" :disabled="!isConnected" class="button">Browse Songs</button>
     </router-link>
   </div>
   <div v-if="lobbyCode != 'failed'">{{ joinLobbyFailureMessage }}</div>

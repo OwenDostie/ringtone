@@ -87,7 +87,7 @@ export default {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        console.log(`Fetched clips: ${JSON.stringify(data)}`); // Debugging line
+        console.log(`Fetched clips: ${JSON.stringify(data)}`);
         clips.value = data;
       } catch (error) {
         console.error('Error fetching clips in song folder:', error);
@@ -97,7 +97,7 @@ export default {
 
     const toggleGameFolder = (folder) => {
       if (selectedGameFolder.value === folder) {
-        selectedGameFolder.value = null; // Collapse if the same folder is clicked
+        selectedGameFolder.value = null;
         selectedSong.value = null;
       } else {
         selectedGameFolder.value = folder;

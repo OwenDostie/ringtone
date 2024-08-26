@@ -43,26 +43,25 @@ export default defineComponent({
     },
     startT() {
       this.resetT();
-      this.startTimestamp = Date.now(); // Record the start time
+      this.startTimestamp = Date.now();
       this.timer = setInterval(() => {
         const elapsed = Date.now() - this.startTimestamp;
-        this.time = Math.max(this.startTime - elapsed, 0); // Calculate the remaining time
+        this.time = Math.max(this.startTime - elapsed, 0); 
 
         if (this.time <= 0) {
           this.stopT();
           this.$emit('endTimer');
         }
-      }, 50); // Use a smaller interval for more frequent checks
+      }, 50); 
     },
     resetT() {
       this.time = this.startTime;
-      this.startTimestamp = Date.now(); // Reset start time as well
+      this.startTimestamp = Date.now(); 
     },
     formatTime(milliseconds) {
       return moment.utc(milliseconds).format("HH:mm:ss.SS");
     },
   },
-  // Expose the stopT method to be called from outside
   expose() {
     return {
       stop: this.stopT,

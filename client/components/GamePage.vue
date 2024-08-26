@@ -11,58 +11,68 @@
       </div>
 
       <div class="main-content">
-        <div class="chat-container">
-          <Chat />
-        </div>
-
         <div class="lobby-container">
           <h3>Lobby Member List</h3>
           <ul>
             <li v-for="member in lobbyMembers" :key="member" class="lobby-member">
               {{ member }}
-              <span v-if="member == usernmae && submittedFile" class="check-mark">✔️</span>
+              <span v-if="member == username && submittedFile" class="check-mark">✔️</span>
               <span v-if="member == lobbyHost" class="crown">👑</span>
             </li>
           </ul>
 
-          <div id="audio-container">
-            <div v-if="audioFiles.length > 0">
-              <div v-for="file in audioFiles" :key="file" class="audio-file">
-                <label>{{ getDirectoryAboveFilename(file) }}</label><br>
+          <div class="chat-container">
+            <Chat />
+          </div>
+        </div>
+
+        <div class="audio-container">
+          <div v-if="audioFiles.length > 0">
+            <div v-for="file in audioFiles" :key="file" class="audio-file">
+              <label>{{ getDirectoryAboveFilename(file) }}</label><br>
+              <audio :src="file" controls></audio>
+              <a :href="file" :download="getFilename(file)" class="download-button">Download</a>
+            </div>
+          </div>
+
+          <div v-if="finalAudioFiles.length > 0" class="audio-container">
+            <div v-for="(finalSong, songIndex) in finalAudioFiles" :key="songIndex" class="audio-file">
+              <label>{{ getDirectoryAboveFilename(finalSong[0]) }}</label><br>
+              <div v-for="(file, fileIndex) in finalSong" :key="songIndex + '-' + fileIndex" class="audio-file">
                 <audio :src="file" controls></audio>
                 <a :href="file" :download="getFilename(file)" class="download-button">Download</a>
               </div>
             </div>
-
-            <div v-if="finalAudioFiles.length > 0" class="audio-container">
-              <div v-for="(finalSong, songIndex) in finalAudioFiles" :key="songIndex" class="audio-file">
-                <label>{{ getDirectoryAboveFilename(finalSong[0]) }}</label><br>
-                <div v-for="(file, fileIndex) in finalSong" :key="songIndex + '-' + fileIndex" class="audio-file">
-                  <audio :src="file" controls></audio>
-                  <a :href="file" :download="getFilename(file)" class="download-button">Download</a>
-                </div>
-              </div>
-            </div>
           </div>
-
         </div>
-
+        
         <div class="userActions">
-          <div class="upload-container">
-            <input type="file" @change="handleFileUpload" />
-            <button @click="uploadFile">upload mp3</button>
-            <p v-if="uploadMessage">{{ uploadMessage }}</p>
+        <div class="upload-container">
+          <div 
+            class="drag-drop-area"
+            @dragover.prevent="handleDragOver"
+            @dragenter.prevent="draggingFile = true"
+            @dragleave="draggingFile = false"
+            @drop.prevent="handleFileDrop"
+            :class="{'dragging': draggingFile}"
+          >
+            <p v-if="!selectedFile">Drag and drop your mp3 here</p>
+            <p v-if="selectedFile">{{ selectedFile.name }}</p>
           </div>
+          <button @click="uploadFile" :disabled="!selectedFile">Upload</button>
+          <p v-if="uploadMessage">{{ uploadMessage }}</p>
+        </div>
+      
           <div class="start-button" v-if="isHost && turnNumber == 0">
             <button @click="onClickStart" type="button">start game</button><br>
           </div>
           <div class="start-button" v-if="isHost && turnNumber != 0 && turnNumber < lobbyMembers.length && turnEnded">
-            <button @click="onClickStart" type="button">start turn {{ turnNumber + 1 }}</button><br>
+            <button @click="onClickStart" type="button" class="button">start turn {{ turnNumber + 1 }}</button><br>
           </div>
           <div class="start-button" v-if="isHost && turnNumber >= lobbyMembers.length && turnEnded">
-            <button @click="onClickNewGame" type="button">new game</button><br>
+            <button @click="onClickNewGame" type="button" class="button">new game</button><br>
           </div>
-          <button @click="onClickSaveFiles" :disabled="!(turnNumber >= lobbyMembers.length && turnEnded)">
+          <button class="button" type="button" @click="onClickSaveFiles" :disabled="!(turnNumber >= lobbyMembers.length && turnEnded)">
             save 
           </button>
         </div>
@@ -70,7 +80,6 @@
     </div>
   </div>
 </template>
-
 
 <script lang="ts">
   import { defineComponent, inject, ref, computed } from 'vue';
@@ -94,12 +103,10 @@
       timerEnded: false,
       isHost: false,
       audioFiles: [] as string[],
+      draggingFile: false,
     };
   },
   methods: {
-    handleFileUpload(event) {
-      this.selectedFile = event.target.files[0];
-    },
     onClickSaveFiles() {
         const message = {
           type: "save_files"
@@ -107,8 +114,22 @@
         console.log("sending save files")
         this.sendMessage(JSON.stringify(message));
     },
+    handleDragOver(event) {
+    // Prevent the default action (open as a URL)
+    event.preventDefault();
+    },
+    handleFileDrop(event) {
+      this.draggingFile = false;
+      const files = event.dataTransfer.files;
+      if (files.length > 0) {
+        this.selectedFile = files[0];
+      }
+    },
+    handleFileUpload(event) {
+      this.selectedFile = event.target.files[0];
+    },
     async uploadFile() {
-      if (!this.selectedFile ) {
+      if (!this.selectedFile) {
         this.uploadMessage = "please select a file!";
         return;
       } else if (!this.turnRunning && !this.turnEnded) {
@@ -242,6 +263,51 @@
 </script>
 
 <style scoped>
+.upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.drag-drop-area {
+  width: 100%;
+  height: 150px;
+  border: 2px dashed #7e57c2; /* Purple border */
+  background-color: #1c1c1c; /* Black background */
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+  transition: border-color 0.3s ease;
+  border-radius: 8px;
+}
+
+.drag-drop-area.dragging {
+  border-color: #9c27b0; /* Lighter purple when dragging */
+}
+
+button {
+  background-color: #7e57c2; /* Purple button */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+button:hover:enabled {
+  background-color: #9c27b0; /* Lighter purple on hover */
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -284,15 +350,41 @@
 
 .main-content {
   display: flex;
-  flex: 1;
-  gap: 5px;
+  flex-direction: row; /* Stack elements horizontally */
+  gap: 10px; /* Increased gap between containers */
   padding: 5px; /* Small padding for spacing */
 }
 
-.chat-container {
-  flex: 1.5;
+.lobby-container,
+.chat-container,
+.audio-container {
+  flex: 1; /* Make all containers take equal space */
+  padding: 10px; /* Added padding for internal spacing */
+  box-sizing: border-box;
+  border: 1px solid #ccc; /* Border for visual separation */
+  border-radius: 5px; /* Rounded corners */
+}
+button {
+  margin-top: 5px;
+}
+
+input[type="file"] {
+  margin-bottom: 5px;
+}
+
+.audio-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* Stack audio files vertically */
+  gap: 10px; /* Space between audio files */
+}
+
+.audio-file {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Space between elements in the audio file */
+}
+.chat-container {
+  flex: 1; /* Allow the chat container to take available space */
   max-height: calc(100vh - 100px); /* Adjust height to prevent overflow */
   border: 1px solid #ccc;
   border-radius: 5px;
@@ -300,12 +392,13 @@
 }
 
 .lobby-container {
-  flex: 2;
+  flex: 1; /* Adjust flex to fit in the vertical stack */
   padding: 5px;
   box-sizing: border-box;
   border: 1px solid #ccc;
   border-radius: 5px;
   text-align: left;
+  margin-bottom: 5px; /* Add some space below the lobby container */
 }
 
 .lobby-container h3 {
@@ -328,12 +421,9 @@
 .lobby-member:last-child {
   border-bottom: none;
 }
-
-.upload-container {
-  flex: 1;
+.userActions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: column; /* Stack user actions vertically */
   padding: 5px;
   box-sizing: border-box;
   border: 1px solid #ccc;
@@ -341,7 +431,28 @@
 }
 
 button {
-  margin-top: 5px;
+  background-color: purple;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+button:disabled {
+  background-color: grey;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  background-color: #6a0dad;
+}
+
+.save-button {
+  background-color: purple;
+  color: white;
+  padding: 10px 20px;
 }
 
 input[type="file"] {
@@ -367,12 +478,11 @@ body {
   animation: flash-red 1s infinite;
 }
 .audio-container {
-  max-height: 400px; /* Set a maximum height for the container */
-  overflow-y: auto;  /* Enable vertical scrolling if content overflows */
-  border: 1px solid #ccc; /* Optional: Add a border for better visual separation */
-  padding: 10px; /* Optional: Add some padding for spacing */
+  padding: 10px; /* Add some padding for spacing */
+  border: 1px solid #ccc; /* Add a border */
+  border-radius: 5px; /* Rounded corners for the box */
+  margin-bottom: 5px; /* Space below the audio container */
 }
-
 .audio-file {
   margin-bottom: 15px; /* Add some space between audio files */
   display: flex;
