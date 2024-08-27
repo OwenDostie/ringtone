@@ -339,14 +339,14 @@ serve(async (request) => {
           } else if (requested_lobby.user_list.some(lobby_user => lobby_user.name == user.name)) {
             // user name is taken
             user.send_failed_lobby_join_message(`someone in lobby ${message_obj.lobby_code} took the name ${user.name}`, user_sockets);
-          } else if (requested_lobby.game.running) {
-            user.send_failed_lobby_join_message(`lobby ${message_obj.lobby_code} is in the middle of a game!`, user_sockets);
           } else {
             user.set_lobby_code(message_obj.lobby_code);
             user_session_ids.set(user.id, user);
             const test_user = user_session_ids.get(sessionId);
             console.log(`user ${user.name} with ${sessionId}, ${user.id} lobby code is ${test_user?.lobby_code}`);
-            lobby_list.add_user_to_lobby(user, message_obj.lobby_code);
+            if (!lobby_list.add_user_to_lobby(user, message_obj.lobby_code)) {
+              user.send_failed_lobby_join_message(`lobby ${message_obj.lobby_code} is in the middle of a game! .. or something`, user_sockets);
+            }
 
             requested_lobby.broadcast_lobby_update(user_sockets);
           }
@@ -402,7 +402,7 @@ serve(async (request) => {
     };
 
     socket.onclose = () => {
-      lobby_list.remove_user_from_lobby(user, user.lobby_code);
+      lobby_list.remove_user_from_lobby(user, user.lobby_code, user_sockets);
       user_sockets.delete(user.id);
       console.log("DISCONNECTED");
     };

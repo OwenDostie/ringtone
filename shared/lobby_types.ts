@@ -73,10 +73,13 @@ export class LobbyList {
         return new_lobby;
     }
 
-    add_user_to_lobby(user: User, lobby_code: string) {
+    add_user_to_lobby(user: User, lobby_code: string): boolean {
         let success = false;
         this.lobby_list.forEach((lobby) => {
-            if (lobby.code == lobby_code) {
+            if (lobby.code == lobby_code && 
+                !lobby.user_list.some(lobby_user => {user.id == lobby_user.id}) && 
+                (!lobby.game.running || lobby.left_user_list.some(left_user => left_user.id == user.id))) {
+
                 lobby.add_user(user);
                 console.log(`added user ${user.name} to lobby with code ${lobby.code}`);
                 success = true;
@@ -84,15 +87,17 @@ export class LobbyList {
         })
         if (!success) {
             console.log(`when adding, culd not find lobby with code ${lobby_code}`);
+            return false;
         }
+        return true;
     }
 
-    async remove_user_from_lobby(user: User, lobby_code: string) {
+    async remove_user_from_lobby(user: User, lobby_code: string, socket_map) {
         let success = false;
     
         this.lobby_list = await Promise.all(this.lobby_list.filter(async (lobby) => {
             if (lobby.code === lobby_code) {
-                lobby.remove_user(user);
+                lobby.remove_user(user, socket_map);
                 console.log(`Removed user ${user.name} from lobby with code ${lobby.code}`);
                 success = true;
     
@@ -153,10 +158,12 @@ export class Lobby {
     directory: string;
     host: User;
     user_list: User[];
+    left_user_list: User[];
 
     constructor(host: User) {
         this.host = host;
         this.user_list = [];
+        this.left_user_list = [];
         this.add_user(host);
         this.code = this.generateLobbyCode();
         this.directory = `uploads/${this.code}`
@@ -190,16 +197,33 @@ export class Lobby {
     }
 
     add_user(user: User) {
-        this.user_list.push(user);
+        let user_returning: boolean = false;
+
+        if (this.user_list.some(lobby_user => {user.id == lobby_user.id})) {
+            return;
+        }
+        this.left_user_list.forEach( left_user => {
+            console.log(`user that left: name: ${left_user.name}, id: ${left_user.id}\n user joining: ${user.name} ${user.id}`);
+            if (user.id == left_user.id) {
+
+                this.user_list.push(left_user)
+                user_returning = true;
+            }
+        });
+        if (!user_returning) {
+            this.user_list.push(user);
+        }
     }
 
-    remove_user(user_to_remove: User) {
+    remove_user(user_to_remove: User, socket_map) {
         this.user_list = this.user_list.filter(user => user.id !== user_to_remove.id);
         if (this.host == user_to_remove && this.user_list.length > 0) {
             this.host = this.user_list[0];
         }
         console.log("removed " +  user_to_remove.name + " new user list  :")
+        this.left_user_list.push(user_to_remove);
         this.printUsers();
+        this.broadcast_lobby_update(socket_map)
     }
 
     broadcast(message: any, socket_map: Map<string, WebSocket | null> ) {

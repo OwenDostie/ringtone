@@ -95,7 +95,6 @@ no joining when the game is ongoing or that names already in there
 shouldn't upload before starting
 shouldn't upload multipelt imes
 
-
 downlad button not showing
 check mark appearing after first person uplaods
 turn number not increasing after first turn
@@ -103,3 +102,12 @@ turn number not increasing after first turn
 FIX DOWNLOAD BUTTON IT LEAVES LOBBY
 LOBBY SOMETIMES JUST NOT FOUND??? OR CAM BEING DUMB
 DRAG AND DROP
+
+show ready
+ding or something when chat comes in
+ringtune in top left should bring you to honme page
+uploading file starts the timer
+refresh first time
+turn automatically running
+rejoining needs timer update
+refreshing makes you rejoin with another self

@@ -48,15 +48,15 @@ export class ServerGame implements GameInterface {
          
         let subDirectories: string[] = [];
         user_list.forEach(user => {
-            console.log(user.name +  "user getting subdirectory: " + this.subDirectories.get(user.name))
-            subDirectories.push(this.subDirectories.get(user.name)!);
+            console.log(user.id +  "user getting subdirectory: " + this.subDirectories.get(user.id))
+            subDirectories.push(this.subDirectories.get(user.id)!);
         })
         
         console.log("TURN SEQUENCES:")
         user_list.forEach((user, index) => {
-            console.log("user " + user.name)
+            console.log("user " + user.id)
             for (let turn = 0; turn < this.numPlayers; turn++) {
-                this.turnSequences.get(user.name)!.push(subDirectories[(index + turn) % this.numPlayers]);
+                this.turnSequences.get(user.id)!.push(subDirectories[(index + turn) % this.numPlayers]);
 
                 console.log("turn " + (turn + 1) + " subdirectory: " + subDirectories[(index + turn) % this.numPlayers]);
             }
@@ -110,14 +110,14 @@ export class ServerGame implements GameInterface {
 
         if (this.turn == 1) {
             objectKey = `${this.directory}/${sanitizedFileName}`;
-            this.subDirectories.set(user.name, sanitizedFileName);
-            console.log(user.name + " setting subdirectory: " + this.subDirectories.get(user.name));
-            this.turnSequences.set(user.name, []);
+            this.subDirectories.set(user.id, sanitizedFileName);
+            console.log(user.id + " setting subdirectory: " + this.subDirectories.get(user.id));
+            this.turnSequences.set(user.id, []);
         } else {
-            objectKey = `${this.directory}/${this.turnSequences.get(user.name)![this.turn - 1]}`;
+            objectKey = `${this.directory}/${this.turnSequences.get(user.id)![this.turn - 1]}`;
         }
 
-        const fullObjectKey = `${objectKey}/${this.turn}_${user.name}.${fileExt}`;
+        const fullObjectKey = `${objectKey}/${this.turn}_${user.id}.${fileExt}`;
 
         try {
             const arrayBuffer = await file.arrayBuffer();
@@ -148,7 +148,7 @@ export class ServerGame implements GameInterface {
     all_users_submitted(user_list: User[]): boolean {
         let ret_val = user_list.every(user => {
                 const user_submitted = this.submitted_files.has(user.id);
-                if (user_submitted) console.log(`${user.name} has submitted a file`)
+                if (user_submitted) console.log(`${user.id} has submitted a file`)
                 return user_submitted;
         });
         if (ret_val && this.turn == 1) {
