@@ -65,11 +65,6 @@ Run the VM from the google cloud console, ssh in, and then `deno task start`
     - this also says if you run this command you can create a template project with ANY FRONTEND FRAMEOWKR
 - do more player orders than just a circle
 
-- docker examples - https://github.com/docker/awesome-compose
-```
-deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
-```
-
 ## owen todo
 ### docker
 - pick a cloud provider/ecosystem
@@ -86,7 +81,7 @@ deno run --allow-read --allow-write --allow-env npm:create-vite-extra@latest
 - docker
 
 ## known bugs
-when you joikjn a lobby from the same browser/ new tab, it will show two of the secon'd tabs user 
+when you join a lobby from the same browser/ new tab, it will show two of the secon'd tabs user 
 lobby explodes if the only person in it refreshes
 open in incognito is a white screen initially
 audio player is working weirdly / not really working on owens' computer 
@@ -99,7 +94,6 @@ downlad button not showing
 check mark appearing after first person uplaods
 turn number not increasing after first turn
 
-FIX DOWNLOAD BUTTON IT LEAVES LOBBY
 LOBBY SOMETIMES JUST NOT FOUND??? OR CAM BEING DUMB
 DRAG AND DROP
 

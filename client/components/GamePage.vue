@@ -31,7 +31,7 @@
             <div v-for="file in audioFiles" :key="file" class="audio-file">
               <label>{{ getDirectoryAboveFilename(file) }}</label><br>
               <audio :src="file" controls></audio>
-              <a :href="file" :download="getFilename(file)" class="download-button">Download</a>
+              <a :href="file" :download="getFilename(file)" target="_blank" class="download-button">Download</a>
             </div>
           </div>
 
@@ -40,7 +40,7 @@
               <label>{{ getDirectoryAboveFilename(finalSong[0]) }}</label><br>
               <div v-for="(file, fileIndex) in finalSong" :key="songIndex + '-' + fileIndex" class="audio-file">
                 <audio :src="file" controls></audio>
-                <a :href="file" :download="getFilename(file)" class="download-button">Download</a>
+                <a :href="file" :download="getFilename(file)" target="_blank" class="download-button">Download</a>
               </div>
             </div>
           </div>
