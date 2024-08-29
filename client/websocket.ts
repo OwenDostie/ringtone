@@ -1,19 +1,20 @@
 
 import { useRouter, useRoute } from 'vue-router'; // Import the router function
 import { ref, reactive, readonly, onMounted, onBeforeUnmount } from 'vue';
+import { UserInterface } from '../shared/lobby_types';
 
 export interface WebSocketState {
     socket: WebSocket | null;
     name: string;
     isConnected: boolean;
-    lobbyMembers: string[];
+    lobbyMembers: UserInterface[];
     lobbyCode: string | null;
     lobbyHost: string | null;
-    turn: number;
     turnRunning: boolean;
     turnEnded: boolean;
     timerEnded: boolean;
     turnNumber: number;
+    turnLength: number;
     err: string;
   }
   
@@ -24,13 +25,25 @@ export interface WebSocketState {
     lobbyMembers: [],
     lobbyCode: null,
     lobbyHost: null,
-    turn: 0,
     turnRunning: false,
     turnEnded: false,
     timerEnded: false,
     turnNumber: 0,
+    turnLength: 0,
     err: '',
   });
+
+  export function resetWebsocketState() {
+    state.lobbyMembers = [];
+    state.lobbyCode = null;
+    state.lobbyHost = null;
+    state.turnRunning= false;
+    state.turnEnded= false;
+    state.timerEnded= false;
+    state.turnNumber = 0;
+    state.turnLength= 0;
+    state.err= ''
+  }
 
   function getSessionData() {
     const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
@@ -132,6 +145,11 @@ function attemptConnection() {
                     state.lobbyCode = message_obj.code; 
                     state.lobbyHost = message_obj.host;
                     state.name = message_obj.name;
+                    if (!state.turnRunning) {
+                      state.turnLength = message_obj.turn_length
+                    }
+                    state.turnRunning = message_obj.turnRunning
+                    state.turnNumber = message_obj.turn_number
 
                     document.cookie = `lobbyId=${encodeURIComponent(message_obj.code)}; path=/; SameSite=Strict`;
                     document.cookie = `username=${encodeURIComponent(message_obj.name)}; path=/; SameSite=Strict`;
@@ -152,6 +170,7 @@ function attemptConnection() {
                     console.log("Trying to start game");
                     state.turnRunning = true;
                     state.turnEnded = false;
+                    state.turnLength = message_obj.start_time
                     if (!message_obj.new_game) {
                         state.turnNumber++;
                     } else {
@@ -206,5 +225,6 @@ export function setupWebsocket() {
     return {
       state: readonly(state),
       sendMessage,
+      resetWebsocketState,
     };
   }

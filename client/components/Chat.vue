@@ -75,7 +75,7 @@ export default {
         };
 
         this.messages.push(chatMessage);
-        this.scrollToBottom;
+        this.scrollToBottom();
       }
       catch (error) {
         console.error('Error parsing message:', error);

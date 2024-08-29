@@ -182,7 +182,7 @@ export class Lobby {
             this.game.set_turn_lengths(turnLengths)
         } else if (this.game.turn == 0) {
             console.log("setting turn lengths to 5s");
-            this.game.set_turn_lengths(new Array(this.user_list.length).fill(8 * 60)) // 8 min default
+            this.game.set_turn_lengths(new Array(this.user_list.length).fill(7 * 60 * 1000)) // 7 min default
         }
 
         this.game.set_num_players(this.user_list.length);
@@ -205,9 +205,14 @@ export class Lobby {
         this.left_user_list.forEach( left_user => {
             console.log(`user that left: name: ${left_user.name}, id: ${left_user.id}\n user joining: ${user.name} ${user.id}`);
             if (user.id == left_user.id) {
+                console.log("This user id left!")
 
-                this.user_list.push(left_user)
-                user_returning = true;
+                if (!this.user_list.some(lobby_user => left_user.id == lobby_user.id)) {
+                    this.printUsers()
+                    console.log("apparnetly doens't contain " + left_user.id)
+                    this.user_list.push(structuredClone(left_user))
+                    user_returning = true;
+                }
             }
         });
         if (!user_returning) {
@@ -221,7 +226,7 @@ export class Lobby {
             this.host = this.user_list[0];
         }
         console.log("removed " +  user_to_remove.name + " new user list  :")
-        this.left_user_list.push(user_to_remove);
+        this.left_user_list.push(structuredClone(user_to_remove));
         this.printUsers();
         this.broadcast_lobby_update(socket_map)
     }
@@ -240,8 +245,13 @@ export class Lobby {
         const game_start_message = {
             type: 'game_start',
             new_game: new_game,
+            turn_length: this.game.turnLengths[this.game.turn]
+
         }
         this.broadcast(JSON.stringify(game_start_message), socket_map);
+        this.user_list.forEach(user => {
+            user.set_submitted_file(false);
+        });
     }
 
     broadcast_game_end(socket_map: Map<string, WebSocket | null> ) {
@@ -267,13 +277,17 @@ export class Lobby {
     }
 
     make_lobby_update_message_string(user: User): string {
-        const members = this.user_list.map(user => user.name);
+        console.log ("turn_length:"+  this.game.turnLengths[this.game.turn] + "game start: "  + this.game.turnStartTime + "now time: " + new Date().getTime())
+        const members = this.user_list.map(user => ({name: user.name, submittedFile: user.submittedFile}));
         const lobby_update_message = {
             type: 'lobby_update',
             name: user.name,
             members: members,
             code: this.code,
             host: this.host.name,
+            turnRunning: this.game.turnRunning,
+            turn_number: this.game.turn,
+            turn_length: this.game.turnLengths[this.game.turn] + this.game.turnStartTime - new Date().getTime(),
         }
 
         console.log("sending lobby update: " + JSON.stringify(lobby_update_message))
@@ -317,11 +331,11 @@ export class Lobby {
     
         if (this.game.turn == 1) {
             objectKey = `${this.directory}/game/${sanitizedFileName}`;
-            this.game.subDirectories.set(user.name, sanitizedFileName);
-            console.log(`${user.name} setting subdirectory: ${this.game.subDirectories.get(user.name)}`);
-            this.game.turnSequences.set(user.name, []);
+            this.game.subDirectories.set(user.id, sanitizedFileName);
+            console.log(`${user.name} setting subdirectory: ${this.game.subDirectories.get(user.id)}`);
+            this.game.turnSequences.set(user.id, []);
         } else {
-            objectKey = `${this.directory}/game/${this.game.turnSequences.get(user.name)![this.game.turn - 1]}`;
+            objectKey = `${this.directory}/game/${this.game.turnSequences.get(user.id)![this.game.turn - 1]}`;
         }
     
         const fullObjectKey = `${objectKey}/${this.game.turn}_${user.name}.${fileExt}`;
@@ -371,6 +385,8 @@ export class Lobby {
             });
     
             this.game.submitted_files.set(user.id, fullObjectKey);
+            user.set_submitted_file(true);
+            this.broadcast_lobby_update(socket_map);
     
             if (this.game.all_users_submitted(this.user_list)) {
                 console.log("All users have submitted! Turn: " + this.game.turn);
@@ -431,7 +447,7 @@ export class Lobby {
         this.user_list.forEach(async user => {
             const socket = socket_map.get(user.id);
     
-            const folderUrl = `${this.directory}/game/${this.game.turnSequences.get(user.name)![this.game.turn]}`;
+            const folderUrl = `${this.directory}/game/${this.game.turnSequences.get(user.id)![this.game.turn]}`;
             console.log(`Looking for files to pass in folder: ${folderUrl}`);
             const [files] = await bucket.getFiles({ prefix: folderUrl });
     
@@ -454,13 +470,18 @@ export class Lobby {
     }
 }
 
-
-export class User {
+export class UserInterface {
     name: string;
+    submittedFile: boolean;
+}
+
+export class User extends UserInterface {
     id: string;
     lobby_code: string;
 
     constructor() {
+        super();
+        this.submittedFile = false;
     }
 
     set_name(name: string) {
@@ -469,6 +490,10 @@ export class User {
 
     set_lobby_code(lobby_code: string) {
         this.lobby_code = lobby_code;
+    }
+
+    set_submitted_file(submitted: boolean) {
+        this.submittedFile = submitted;
     }
 
     send_message(message: any, socket_map: Map<string, WebSocket | null> ) {
@@ -486,4 +511,10 @@ export class User {
 
         this.send_message(JSON.stringify(failed_Join_lobby_msg), socket_map);
     }
+    
+    reset_user_data() {
+        this.submittedFile = false;
+        this.lobby_code = '';
+
+    }    
 }

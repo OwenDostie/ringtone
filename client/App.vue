@@ -17,11 +17,12 @@ import { setupWebsocket } from './websocket.ts';
 
 export default defineComponent({
   setup() {
-    const { state, sendMessage } = setupWebsocket();
+    const { state, sendMessage, resetWebsocketState } = setupWebsocket();
 
     // Provide WebSocket state and actions globally
     provide('websocketState', state);
     provide('sendMessage', sendMessage);
+    provide('resetWebsocketState', resetWebsocketState);
 
     return { state };
   }

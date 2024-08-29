@@ -294,7 +294,6 @@ serve(async (request) => {
 
       console.log("got a message from the client", message_obj);
 
-      // Big switch case for handling different types of messages from the client
       switch (message_obj.type) {
         case 'chat_message': {
           const lobby = lobby_list.get_lobby_with_code(user.lobby_code);
@@ -317,6 +316,7 @@ serve(async (request) => {
           user.set_name(message_obj.hoster_name);
           const new_lobby = lobby_list.add_lobby(user);
 
+          user.reset_user_data()
           user.set_lobby_code(new_lobby.code);
           user_session_ids.set(user.id, user);
           const test_user = user_session_ids.get(sessionId);
@@ -327,6 +327,7 @@ serve(async (request) => {
         case 'join_request': {
           const requested_lobby = lobby_list.get_lobby_with_code(message_obj.lobby_code);
           user.set_name(message_obj.user_name);
+          user.reset_user_data()
           user_session_ids.set(user.id, user);
 
           if (!requested_lobby) {
@@ -353,15 +354,20 @@ serve(async (request) => {
 
           break;
         }
+        case 'leave_lobby': {
+          lobby_list.remove_user_from_lobby(user, user.lobby_code, user_sockets);
+          user.reset_user_data();
+          break;
+        }
         case 'game_start_request': {
           const lobby = lobby_list.get_lobby_with_code(user.lobby_code);
           if (!lobby) {
             console.log('couldnt start that shit');
             return;
           }
-          lobby.broadcast_game_start(false, user_sockets);
 
           lobby.start_game_turn(user_sockets);
+          lobby.broadcast_game_start(false, user_sockets);
           break;
         }
 
@@ -403,6 +409,7 @@ serve(async (request) => {
 
     socket.onclose = () => {
       lobby_list.remove_user_from_lobby(user, user.lobby_code, user_sockets);
+      user.reset_user_data();
       user_sockets.delete(user.id);
       console.log("DISCONNECTED");
     };

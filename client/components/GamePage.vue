@@ -4,7 +4,7 @@
       <div :class="{'flash-red': timerEnded && !submittedFile}" class="top-section">
         <h2>GAME TIME</h2>
         <h2> TURN: {{ turnNumber }}/{{ lobbyMembers.length }}</h2>
-        <Timer class="timer" ref="timerRef" :running="turnRunning" @endTimer="endTimer"/>
+        <Timer class="timer" ref="timerRef" :running="turnRunning" :turnLength="turnLength" @endTimer="endTimer"/>
         <div class="lobby-code">
           <h3>Connected to lobby with code: {{ lobbyCode }}</h3>
         </div>
@@ -14,10 +14,10 @@
         <div class="lobby-container">
           <h3>Lobby Member List</h3>
           <ul>
-            <li v-for="member in lobbyMembers" :key="member" class="lobby-member">
-              {{ member }}
-              <span v-if="member == username && submittedFile" class="check-mark">✔️</span>
-              <span v-if="member == lobbyHost" class="crown">👑</span>
+            <li v-for="member in lobbyMembers" :key="member.name" class="lobby-member">
+              {{ member.name }}
+              <span v-if="member.submittedFile" class="check-mark">✔️</span>
+              <span v-if="member.name == lobbyHost" class="crown">👑</span>
             </li>
           </ul>
 
@@ -59,7 +59,7 @@
             <p v-if="!selectedFile">Drag and drop your mp3 here</p>
             <p v-if="selectedFile">{{ selectedFile.name }}</p>
           </div>
-          <button @click="uploadFile" :disabled="!selectedFile">Upload</button>
+          <button @click="uploadFile" :disabled="!selectedFile || !turnRunning || submittedFile">Upload</button>
           <p v-if="uploadMessage">{{ uploadMessage }}</p>
         </div>
       
@@ -84,6 +84,7 @@
 <script lang="ts">
   import { defineComponent, inject, ref, computed } from 'vue';
   import { WebSocketState } from '../websocket';
+  import { onBeforeRouteLeave } from 'vue-router';
   import Timer from './Timer.vue'
   import Chat from './Chat.vue'
 
@@ -100,6 +101,7 @@
       submittedFile: false,
       uploadMessage: '',
       turnRunning: false,
+      turnLength: 0,
       timerEnded: false,
       isHost: false,
       audioFiles: [] as string[],
@@ -148,7 +150,6 @@
 
         if (response.ok) {
           this.uploadMessage = "file uploaded successfully!";
-          this.submittedFile = true;
         } else {
           const errorMessage = await response.text();
           this.uploadMessage = errorMessage;
@@ -188,8 +189,9 @@
   setup() {
     const websocketState = inject<WebSocketState>('websocketState');
     const sendMessage = inject<(message: string) => void>('sendMessage');
+    const resetWebsocketState = inject<() => void>('resetWebsocketState');
 
-    if (!websocketState || !sendMessage) {
+    if (!websocketState || !sendMessage || !resetWebsocketState) {
       throw new Error('WebSocket state function not provided');
     }
 
@@ -198,6 +200,7 @@
     const lobbyMembers = computed(() => websocketState.lobbyMembers);
     const lobbyCode = computed(() => websocketState.lobbyCode);
     const turnRunning = computed(() => websocketState.turnRunning);
+    const turnLength= computed(() => websocketState.turnLength);
     const turnEnded = computed(() => websocketState.turnEnded);
     const turnNumber = computed(() => websocketState.turnNumber);
     const username = computed(() => websocketState.name);
@@ -228,7 +231,16 @@
         audioFiles.value = [];
         finalAudioFiles.value = messageObj.filenames.filter(fileArray => Array.isArray(fileArray) && fileArray.length > 0);
     }
-});
+  });
+   onBeforeRouteLeave((to, from, next) => {
+     const msg = {
+       type: 'leave_lobby',
+     };
+     sendMessage(JSON.stringify(msg));
+     resetWebsocketState();
+
+     next();
+   });
 
     return {
       timerRef,
@@ -240,16 +252,17 @@
       isHost,
       username,
       turnRunning,
+      turnLength,
       turnEnded,
       turnNumber,
-      sendMessage
+      sendMessage,
+      resetWebsocketState,
     };
   },
   watch: {
     turnEnded(turnNowEnding, turnNowStarting) {
       console.log("watch working" + turnNowEnding)
       if (turnNowEnding) {
-        this.submittedFile = false;
         this.timerEnded = false;
       }
       if (turnNowEnding) {

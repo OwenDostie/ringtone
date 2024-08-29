@@ -29,6 +29,7 @@ export class ServerGame implements GameInterface {
     turnLengths: number[] = [];
     running: boolean = false;
     turnRunning: boolean = false;
+    turnStartTime: number;
     submitted_files: Map<string, string> = new Map<string, string>(); 
     turnSequences: Map<string, string[]> = new Map<string, string[]>(); 
  
@@ -69,7 +70,9 @@ export class ServerGame implements GameInterface {
         this.running = true;
         console.log("turn " + this.turn +"starting! waiting " + this.turnLengths[this.turn - 1] + " ms")
 
-        setTimeout(() => this.finish_turn(callback), this.turnLengths[this.turn - 1] * 1000)
+        this.turnStartTime = new Date().getTime()
+        this.turnRunning = true;
+        setTimeout(() => this.finish_turn(callback), this.turnLengths[this.turn - 1])
     }
 
     finish_turn(callback: () => void) {
@@ -78,6 +81,7 @@ export class ServerGame implements GameInterface {
             return;
         }
         this.turnRunning = false;
+        if (this.turn == this.numPlayers) this.running = false;
         console.log("turn " + this.turn + "finished!")
         callback();
     }

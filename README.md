@@ -105,3 +105,6 @@ refresh first time
 turn automatically running
 rejoining needs timer update
 refreshing makes you rejoin with another self
+chat censorshop
+can't find lobby
+
