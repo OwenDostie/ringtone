@@ -28,7 +28,14 @@ export default {
   data() {
     return {
       messages: [] as ChatMessage[],
-      chatPlaceholders: ["i\'m so talented", "let me cook", "it\'s a heater", "this is so fun", "wombo combo!", "bro this beat sux..."],
+      chatPlaceholders: ["i\'m so talented", 
+      "let me cook", 
+      "it\'s a heater", 
+      "this is so fun", 
+      "wombo combo!", 
+      "bro this beat sux...", 
+      "and i get high fo my baby",
+      "im the shit that they dont wanna flush!"],
       newMessage: ''
     };
   },

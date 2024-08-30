@@ -10,6 +10,8 @@ export interface WebSocketState {
     lobbyMembers: UserInterface[];
     lobbyCode: string | null;
     lobbyHost: string | null;
+    submittedFile: boolean;
+    gameRunning: boolean;
     turnRunning: boolean;
     turnEnded: boolean;
     timerEnded: boolean;
@@ -25,6 +27,8 @@ export interface WebSocketState {
     lobbyMembers: [],
     lobbyCode: null,
     lobbyHost: null,
+    submittedFile: false,
+    gameRunning: false,
     turnRunning: false,
     turnEnded: false,
     timerEnded: false,
@@ -37,6 +41,8 @@ export interface WebSocketState {
     state.lobbyMembers = [];
     state.lobbyCode = null;
     state.lobbyHost = null;
+    state.submittedFile = false;
+    state.gameRunning= false;
     state.turnRunning= false;
     state.turnEnded= false;
     state.timerEnded= false;
@@ -145,10 +151,12 @@ function attemptConnection() {
                     state.lobbyCode = message_obj.code; 
                     state.lobbyHost = message_obj.host;
                     state.name = message_obj.name;
+                    state.submittedFile = message_obj.submitted_file;
                     if (!state.turnRunning) {
                       state.turnLength = message_obj.turn_length
                     }
-                    state.turnRunning = message_obj.turnRunning
+                    state.turnRunning = message_obj.turn_running
+                    state.gameRunning = message_obj.game_running
                     state.turnNumber = message_obj.turn_number
 
                     document.cookie = `lobbyId=${encodeURIComponent(message_obj.code)}; path=/; SameSite=Strict`;
@@ -171,18 +179,21 @@ function attemptConnection() {
                     state.turnRunning = true;
                     state.turnEnded = false;
                     state.turnLength = message_obj.start_time
-                    if (!message_obj.new_game) {
-                        state.turnNumber++;
-                    } else {
-                        state.turnNumber = 1;
-                    }
+                    state.timerEnded = false;
+                    state.turnNumber = message_obj.turn_number
                     break;
                 }
-                case 'game_end': {
-                    state.turnRunning = false;
-                    state.turnEnded = true;
+                case 'timer_end': {
+                    state.timerEnded = true;
                     break;
                 }
+                case 'turn_end': {
+                  state.turnRunning = false;
+                  state.turnEnded = true;
+                  state.timerEnded = false;
+                  state.gameRunning = message_obj.game_running;
+                  break;
+              }
             }
         };
 

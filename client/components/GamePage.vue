@@ -59,17 +59,14 @@
             <p v-if="!selectedFile">Drag and drop your mp3 here</p>
             <p v-if="selectedFile">{{ selectedFile.name }}</p>
           </div>
-          <button @click="uploadFile" :disabled="!selectedFile || !turnRunning || submittedFile">Upload</button>
+          <button @click="uploadFile" :disabled="!selectedFile || submittedFile">Upload</button>
           <p v-if="uploadMessage">{{ uploadMessage }}</p>
         </div>
       
-          <div class="start-button" v-if="isHost && turnNumber == 0">
-            <button @click="onClickStart" type="button">start game</button><br>
-          </div>
-          <div class="start-button" v-if="isHost && turnNumber != 0 && turnNumber < lobbyMembers.length && turnEnded">
+          <div class="start-button" v-if="isHost && gameRunning && turnEnded">
             <button @click="onClickStart" type="button" class="button">start turn {{ turnNumber + 1 }}</button><br>
           </div>
-          <div class="start-button" v-if="isHost && turnNumber >= lobbyMembers.length && turnEnded">
+          <div class="start-button" v-if="isHost && !gameRunning">
             <button @click="onClickNewGame" type="button" class="button">new game</button><br>
           </div>
           <button class="button" type="button" @click="onClickSaveFiles" :disabled="!(turnNumber >= lobbyMembers.length && turnEnded)">
@@ -85,6 +82,7 @@
   import { defineComponent, inject, ref, computed } from 'vue';
   import { WebSocketState } from '../websocket';
   import { onBeforeRouteLeave } from 'vue-router';
+  import { nextTick } from 'vue';
   import Timer from './Timer.vue'
   import Chat from './Chat.vue'
 
@@ -100,6 +98,7 @@
       selectedFile: null,
       submittedFile: false,
       uploadMessage: '',
+      gameRunning: false,
       turnRunning: false,
       turnLength: 0,
       timerEnded: false,
@@ -198,15 +197,17 @@
     const isHost = computed(() => websocketState.lobbyHost === websocketState.name);
     const lobbyHost = computed(() => websocketState.lobbyHost);
     const lobbyMembers = computed(() => websocketState.lobbyMembers);
+    const submittedFile = computed(() => websocketState.submittedFile);
     const lobbyCode = computed(() => websocketState.lobbyCode);
+    const gameRunning = computed(() => websocketState.gameRunning);
     const turnRunning = computed(() => websocketState.turnRunning);
     const turnLength= computed(() => websocketState.turnLength);
     const turnEnded = computed(() => websocketState.turnEnded);
+    const timerEnded = computed(() => websocketState.timerEnded);
     const turnNumber = computed(() => websocketState.turnNumber);
     const username = computed(() => websocketState.name);
 
     const audioFiles = ref<string[]>([]);
-    const timerRef = ref(null);
 
     const finalAudioFiles = ref<string[][]>([]);
 
@@ -243,7 +244,6 @@
    });
 
     return {
-      timerRef,
       audioFiles,
       finalAudioFiles,
       lobbyHost,
@@ -251,25 +251,28 @@
       lobbyCode,
       isHost,
       username,
+      submittedFile,
+      gameRunning,
       turnRunning,
       turnLength,
       turnEnded,
+      timerEnded,
       turnNumber,
       sendMessage,
       resetWebsocketState,
     };
   },
   watch: {
-    turnEnded(turnNowEnding, turnNowStarting) {
-      console.log("watch working" + turnNowEnding)
-      if (turnNowEnding) {
-        this.timerEnded = false;
-      }
-      if (turnNowEnding) {
-        if (this.timerRef.value) {
-          this.timerRef.value.stop(); // Call the stop method on the Timer component
+    timerEnded(turnNowEnding, turnNowStarting) {
+      console.log("watching: " + turnNowEnding + " and " + turnNowStarting);
+      console.log("Timer Ref:", this.$refs.timerRef);
+      nextTick(() => {
+        if (this.$refs.timerRef) {
+          this.$refs.timerRef.stopT();
+        } else {
+          console.log("timerRef is still undefined after nextTick");
         }
-      }
+      });
     }
   },
 });

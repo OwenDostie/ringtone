@@ -182,11 +182,12 @@ export class Lobby {
             this.game.set_turn_lengths(turnLengths)
         } else if (this.game.turn == 0) {
             console.log("setting turn lengths to 5s");
-            this.game.set_turn_lengths(new Array(this.user_list.length).fill(7 * 60 * 1000)) // 7 min default
+//            this.game.set_turn_lengths(new Array(this.user_list.length).fill(7 * 60 * 1000)) // 7 min default
+            this.game.set_turn_lengths(new Array(this.user_list.length).fill(3 * 1000)) // 7 min default
         }
 
         this.game.set_num_players(this.user_list.length);
-        this.game.start_turn(() => this.broadcast_game_end(socket_map));
+        this.game.start_turn(() => this.broadcast_timer_end(socket_map));
     }
 
     printUsers() {
@@ -244,21 +245,35 @@ export class Lobby {
     broadcast_game_start(new_game: boolean, socket_map: Map<string, WebSocket | null> ) {
         const game_start_message = {
             type: 'game_start',
+            turn_number: this.game.turn,
             new_game: new_game,
-            turn_length: this.game.turnLengths[this.game.turn]
+            turn_length: this.game.turnLengths[this.game.turn],
+            game_running: this.game.running
 
         }
+        if (new_game) {
+            this.user_list.forEach(user => user.reset_user_turn_data())
+        }
+        this.broadcast_lobby_update(socket_map)
         this.broadcast(JSON.stringify(game_start_message), socket_map);
         this.user_list.forEach(user => {
             user.set_submitted_file(false);
         });
     }
 
-    broadcast_game_end(socket_map: Map<string, WebSocket | null> ) {
-        const game_end_message = {
-            type: 'game_end',
+    broadcast_turn_end(game_running: boolean, socket_map: Map<string, WebSocket | null> ) {
+        const turn_end_message = {
+            type: 'turn_end',
+            game_running: 'turn_end',
         }
-        this.broadcast(JSON.stringify(game_end_message), socket_map);
+        this.broadcast(JSON.stringify(turn_end_message), socket_map);
+    }
+
+    broadcast_timer_end(socket_map: Map<string, WebSocket | null> ) {
+        const timer_end_message = {
+            type: 'timer_end',
+        }
+        this.broadcast(JSON.stringify(timer_end_message), socket_map);
     }
 
     broadcast_chat_message(message: ChatMessage, socket_map: Map<string, WebSocket | null> ) {
@@ -282,10 +297,12 @@ export class Lobby {
         const lobby_update_message = {
             type: 'lobby_update',
             name: user.name,
+            submitted_file: user.submittedFile,
             members: members,
             code: this.code,
             host: this.host.name,
-            turnRunning: this.game.turnRunning,
+            turn_running: this.game.turnRunning,
+            game_running: this.game.running,
             turn_number: this.game.turn,
             turn_length: this.game.turnLengths[this.game.turn] + this.game.turnStartTime - new Date().getTime(),
         }
@@ -392,12 +409,13 @@ export class Lobby {
                 console.log("All users have submitted! Turn: " + this.game.turn);
                 if (this.game.turn == this.game.numPlayers) {
                     console.log("Game is over! Broadcasting final files");
+                    this.game.running = false;
                     await this.broadcast_audio_files(socket_map); // Ensure broadcasting happens after upload
                 } else {
                     console.log("Passing file to next person");
                     await this.pass_audio_files(socket_map); // Ensure file passing happens after upload
                 }
-                this.broadcast_game_end(socket_map);
+                this.broadcast_turn_end(this.game.running, socket_map);
             }
         } catch (error) {
             console.error("Upload failed:", error);
@@ -513,8 +531,11 @@ export class User extends UserInterface {
     }
     
     reset_user_data() {
-        this.submittedFile = false;
         this.lobby_code = '';
 
+    }    
+
+    reset_user_turn_data() {
+        this.submittedFile = false;
     }    
 }

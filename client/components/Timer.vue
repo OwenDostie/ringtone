@@ -29,6 +29,7 @@ export default defineComponent({
     }
   },
   mounted() {
+    console.log("Timer mounted")
     if (this.running) {
       this.startT();
     }
@@ -42,6 +43,7 @@ export default defineComponent({
   },
   methods: {
     stopT() {
+      console.log("stoping tinmer")
       this.time = 0;
       clearInterval(this.timer);
     },
@@ -67,7 +69,7 @@ export default defineComponent({
   },
   expose() {
     return {
-      stop: this.stopT,
+      stopT: this.stopT,
     };
   }
 });
