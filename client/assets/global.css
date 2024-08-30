@@ -117,6 +117,7 @@ body {
     border-color: #50EAA4; /* Border color when input is focused */
     outline: none; /* Remove default focus outline */
   }
+
   input[type="file"] {
     margin-bottom: 5px;
     padding: 10px; /* Add padding to match button and other inputs */

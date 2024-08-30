@@ -36,13 +36,14 @@
           </div>
 
           <div v-if="finalAudioFiles.length > 0" class="audio-container">
-            <div v-for="(finalSong, songIndex) in finalAudioFiles" :key="songIndex" class="audio-file">
+            <div v-for="(finalSong, songIndex) in finalAudioFiles" :key="songIndex" class="audio-column">
               <label>{{ getDirectoryAboveFilename(finalSong[0]) }}</label><br>
               <div v-for="(file, fileIndex) in finalSong" :key="songIndex + '-' + fileIndex" class="audio-file">
+                <br><br>
                 <audio :src="file" controls></audio>
                 <a :href="file" :download="getFilename(file)" target="_blank" class="download-button">Download</a>
               </div>
-            </div>
+            </div> 
           </div>
         </div>
         
@@ -263,18 +264,17 @@
     };
   },
   watch: {
-    timerEnded(turnNowEnding, turnNowStarting) {
-      console.log("watching: " + turnNowEnding + " and " + turnNowStarting);
-      console.log("Timer Ref:", this.$refs.timerRef);
-      nextTick(() => {
-        if (this.$refs.timerRef) {
+    timerEnded(oldVal, newVal) {
+        if (newVal && this.$refs.timerRef) {
           this.$refs.timerRef.stopT();
-        } else {
-          console.log("timerRef is still undefined after nextTick");
         }
-      });
-    }
-  },
+      }
+    },
+    turnEnded(oldVal, newVal) {
+      if (newVal) {
+        this.selectedFile = null;
+      }
+    },
 });
 </script>
 
@@ -336,7 +336,6 @@ button:hover:enabled {
   filter: drop-shadow(0 0 2em #42b883aa);
 }
 
-
 .app-container {
   height: 100vh;
   margin: 0;
@@ -372,39 +371,42 @@ button:hover:enabled {
 }
 
 .lobby-container,
-.chat-container,
-.audio-container {
+.chat-container {
   flex: 1; /* Make all containers take equal space */
   padding: 10px; /* Added padding for internal spacing */
   box-sizing: border-box;
   border: 1px solid #ccc; /* Border for visual separation */
   border-radius: 5px; /* Rounded corners */
-}
-button {
-  margin-top: 5px;
-}
-
-input[type="file"] {
-  margin-bottom: 5px;
-}
-
-.audio-container {
-  display: flex;
-  flex-direction: column; /* Stack audio files vertically */
-  gap: 10px; /* Space between audio files */
-}
-
-.audio-file {
-  display: flex;
-  align-items: center;
-  gap: 10px; /* Space between elements in the audio file */
-}
-.chat-container {
-  flex: 1; /* Allow the chat container to take available space */
   max-height: calc(100vh - 100px); /* Adjust height to prevent overflow */
   border: 1px solid #ccc;
   border-radius: 5px;
   overflow: hidden;
+}
+.audio-container {
+  display: flex;
+  gap: 20px; /* Space between columns */
+}
+
+.audio-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Space between audio files within a column */
+}
+
+.audio-file {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.download-button {
+  display: inline-block;
+  width: 24px; /* Small square button */
+  height: 24px;
+  background-color: #6200ea; /* Purple button */
+  color: #fff;
+  text-align: center;
+  line-height: 24px;
 }
 
 .lobby-container {
@@ -493,12 +495,14 @@ body {
 .flash-red {
   animation: flash-red 1s infinite;
 }
+
 .audio-container {
   padding: 10px; /* Add some padding for spacing */
   border: 1px solid #ccc; /* Add a border */
   border-radius: 5px; /* Rounded corners for the box */
   margin-bottom: 5px; /* Space below the audio container */
 }
+
 .audio-file {
   margin-bottom: 15px; /* Add some space between audio files */
   display: flex;

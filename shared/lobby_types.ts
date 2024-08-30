@@ -254,11 +254,11 @@ export class Lobby {
         if (new_game) {
             this.user_list.forEach(user => user.reset_user_turn_data())
         }
-        this.broadcast_lobby_update(socket_map)
-        this.broadcast(JSON.stringify(game_start_message), socket_map);
         this.user_list.forEach(user => {
             user.set_submitted_file(false);
         });
+        this.broadcast_lobby_update(socket_map)
+        this.broadcast(JSON.stringify(game_start_message), socket_map);
     }
 
     broadcast_turn_end(game_running: boolean, socket_map: Map<string, WebSocket | null> ) {
@@ -507,6 +507,7 @@ export class User extends UserInterface {
     }
 
     set_lobby_code(lobby_code: string) {
+        this.reset_user_turn_data()
         this.lobby_code = lobby_code;
     }
 
