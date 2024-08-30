@@ -182,8 +182,8 @@ export class Lobby {
             this.game.set_turn_lengths(turnLengths)
         } else if (this.game.turn == 0) {
             console.log("setting turn lengths to 5s");
-//            this.game.set_turn_lengths(new Array(this.user_list.length).fill(7 * 60 * 1000)) // 7 min default
-            this.game.set_turn_lengths(new Array(this.user_list.length).fill(3 * 1000)) // 7 min default
+            this.game.set_turn_lengths(new Array(this.user_list.length).fill(7 * 60 * 1000)) // 7 min default
+//            this.game.set_turn_lengths(new Array(this.user_list.length).fill(3 * 1000)) // 7 min default
         }
 
         this.game.set_num_players(this.user_list.length);
@@ -264,7 +264,7 @@ export class Lobby {
     broadcast_turn_end(game_running: boolean, socket_map: Map<string, WebSocket | null> ) {
         const turn_end_message = {
             type: 'turn_end',
-            game_running: 'turn_end',
+            game_running: game_running,
         }
         this.broadcast(JSON.stringify(turn_end_message), socket_map);
     }

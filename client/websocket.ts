@@ -181,6 +181,7 @@ function attemptConnection() {
                     state.turnLength = message_obj.start_time
                     state.timerEnded = false;
                     state.turnNumber = message_obj.turn_number
+                    state.gameRunning = message_obj.game_running;
                     break;
                 }
                 case 'timer_end': {

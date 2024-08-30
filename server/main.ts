@@ -377,9 +377,9 @@ serve(async (request) => {
             console.log('couldnt start that shit');
             return;
           }
+          lobby.restart_game(user_sockets);
           lobby.broadcast_game_start(true, user_sockets);
 
-          lobby.restart_game(user_sockets);
           break;
         }
         case 'round_ready': {
