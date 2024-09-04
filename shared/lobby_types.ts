@@ -462,7 +462,7 @@ export class Lobby {
     }
     
     async pass_audio_files(socket_map: Map<string, WebSocket | null>) {
-        this.user_list.forEach(async user => {
+        this.user_list.forEach(async (user) => {
             const socket = socket_map.get(user.id);
     
             const folderUrl = `${this.directory}/game/${this.game.turnSequences.get(user.id)![this.game.turn]}`;
@@ -472,17 +472,25 @@ export class Lobby {
             if (files.length === 0) {
                 console.warn(`No files found in folder: ${folderUrl}`);
             } else {
-                console.log(`Found files: ${files.map(file => file.name).join(', ')}`);
-            }
+                // Sort files by the last updated timestamp
+                const sortedFiles = files.sort((a, b) => {
+                    const dateA = new Date(a.metadata.updated).getTime();
+                    const dateB = new Date(b.metadata.updated).getTime();
+                    return dateB - dateA; // Sort in descending order, most recent first
+                });
     
-            const message = {
-                type: 'audio_files',
-                filenames: files.map(file => `https://storage.googleapis.com/${bucket.name}/${file.name}`),
-            };
+                const lastUploadedFile = sortedFiles[0];
+                console.log(`Last uploaded file: ${lastUploadedFile.name}`);
+                
+                const message = {
+                    type: 'audio_files',
+                    filenames: [`https://storage.googleapis.com/${bucket.name}/${lastUploadedFile.name}`],
+                };
     
-            if (socket) {
-                console.log(`Sending file URLs to user ${user.name}: ${message.filenames.join(', ')}`);
-                socket.send(JSON.stringify(message));
+                if (socket) {
+                    console.log(`Sending last uploaded file URL to user ${user.name}: ${message.filenames[0]}`);
+                    socket.send(JSON.stringify(message));
+                }
             }
         });
     }
