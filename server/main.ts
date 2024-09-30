@@ -55,24 +55,18 @@ function setSessionCookie(headers: Headers, sessionId: string, lobbyId?: string,
   setCookie(headers, {
     name: "sessionId",
     value: sessionId,
-    secure: true, 
-    sameSite: "None",
   });
 
   if (lobbyId) {
     setCookie(headers, {
       name: "lobbyId",
       value: lobbyId,
-      secure: true, 
-      sameSite: "None", 
     });
   }
   if (username)  {
     setCookie(headers, {
       name: "username",
       value: username,
-      secure: true,
-      sameSite: "None", 
     });
   }
 }
@@ -96,7 +90,7 @@ serve(async (request) => {
 
     const headers = new Headers();
     setSessionCookie(headers, sessionId);
-    return new Response(null, { status: 200, headers });
+    return new Response("is this the response body or something", { status: 200, headers });
   } else {
     if (!user_session_ids.has(sessionId)) {
       user = new User();
