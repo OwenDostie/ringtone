@@ -1,5 +1,14 @@
 # ringtone
 
+# DOCKER
+in project folder run `docker compose up -d` (-d flag is daemon mode)
+for logs run `docker compose logs` will show output (only when container is runnning)
+to stop run `docker compose down -v` (-v makes sure volumes are also removed)
+to restart run `docker compose restart`
+to ssh (or run another command) `docker exec -it app /bin/sh` (this goes to the container named app and runs /bin/sh (alpine doesn't have bash)
+to list containers `docker compose ps` or `docker ps`, this shows network name etc.
+`docker-compose.yml` and `Dockerfile` hold all the config stuff
+
 ## get dependencies
 install deno
 
